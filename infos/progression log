@@ -1,0 +1,52 @@
+12-11-21 :
+useful api examples :
+https://github.com/twitterdev/search-tweets-python/blob/master/examples/api_example.ipynb
+
+article on looking into full archive :
+https://developer.twitter.com/en/docs/tutorials/getting-historical-tweets-using-the-full-archive-search-endpoint
+
+operators :
+https://developer.twitter.com/en/docs/twitter-api/enterprise/powertrack-api/guides/operators
+
+Those are all the terms that could be useful for our search :
+lang:
+Matches Tweets that have been classified by Twitter as being of a particular language (if, and only if, the Tweet has been classified). It is important to note that each Tweet is currently only classified as being of one language, so AND’ing together multiple languages will yield no results.
+Note: if no language classification can be made the provided result is ‘und’ (for undefined).
+Japanese: ja
+--> so it could be that the tweets are wrongly classified, if for example there is more than one language in the tweets. To ensure quality, might be better to also include country in search, then see on the first batch if any tweets come with a different language tag
+
+place:
+place_country:
+profile_country:
+profile_region:
+profile_locality:
+profile_subregion:
+has:geo
+has:profile_geo
+is:reply
+bio_location:
+Matches tweets where the User object's location contains the specified keyword or phrase.
+
+------------------------------------------------------------------------------------------------------
+
+12-16-21 : So, I did get approved and now I can retrieve the tweets using branch v2 of searchtweets python API, BUT I don't see how to get access to all the metadata as a json form, now I just have the tweet ID and the text in the results. This might require an additional phase of requesting all the metadata with the tweets IDs (I remember something like that, not sure though).
+
+Also, seems like it is still including all the retweets when I included in the query to not keep these, so idk, I need to read more of the docs.
+
+Finally, I was thinking I need to group tweets by weeks of that year in order to keep the data organized, so I will do my searches week after week in order to save on the requests.
+
+-----------------------------------------------------------------------------------------------------
+
+Same day : I just resolved everything and extracted all the tweets. I examined the language, turns out I don't think I will need to keep the ones with a language other than japanese. There is very few of them, and reading them all none seem to actually be in japanese, or they contain only one hashtag so no need to worry about it.
+
+I will try to translate them to english and store the results again in a new file
+
+------------------------------------------------------------------------------------------------------
+
+12-17-21 : Ran the entire translation, which took almost 20h in total (crashed two times, can be very precise).
+
+Will now remove doubles + tweets in other language than japanese, since these are obvious outliers. Then will need Thaïs for further decisions on corpus design, so I will look into app annotations, I wanted to use prodigy, maybe on something with a server ? Or I could setup on her computer and mine, and do it locally.
+
+------------------------------------------------------------------------------------------------------
+
+12-18-21 : Turns out there was a bug in the translation, most tweets had no translation, meaning the metadata "english_text" contained only text in japanese. I have corrected some issues and restarted it, it should take lots of time again. But I have added a safety net for

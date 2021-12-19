@@ -1,0 +1,70 @@
+{
+    "entities":
+    {
+        "annotations":
+        [
+            {
+                "start": 53,
+                "end": 56,
+                "probability": 0.9914,
+                "type": "Person",
+                "normalized_text":
+                "A name of a person"
+            },
+            {
+                "start": 86,
+                "end": 94,
+                "probability": 0.3922,
+                "type": "Organization",
+                "normalized_text":
+                "A name of an organization"
+            }
+        ],
+        "hashtags":
+        [
+            {
+                "start": 41,
+                "end": 47,
+                "tag": "MeToo"
+            },
+            {
+                "start": 48,
+                "end": 51,
+                "tag": "\u8a69\u7e54"
+            }
+        ],
+        "mentions":
+        [
+            {
+                "start": 0,
+                "end": 16,
+                "username": "a username",
+                "id": "000000000"
+            }
+        ]
+    },
+    "referenced_tweets":
+    [
+        {
+            "type": "replied_to",
+            "id": "0000000000000000000"
+        }
+    ],
+    "conversation_id": "000000000000000000000",
+    "id": "0000000000000000000",
+    "possibly_sensitive": false,
+    "public_metrics":
+    {
+        "retweet_count": 0,
+        "reply_count": 0,
+        "like_count": 24,
+        "quote_count": 0
+    },
+    "lang": "ja",
+    "author_id": "000000000000000000",
+    "created_at": "2017-10-31T23:50:57.000Z",
+    "reply_settings": "everyone",
+    "text": "the text of the tweet",
+    "in_reply_to_user_id": "000000000",
+    "source": "Twitter Web Client"
+}
