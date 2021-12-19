@@ -3,13 +3,14 @@ import os
 
 from searchtweets import gen_request_parameters, load_credentials, ResultStream
 
+from utils.file_utils import read_file_generator
+from utils.paths import QUERY_FILE_PATH, RAW_DATA_PATH
 
-def create_request(start_date, end_date):
+
+def create_request(query_string, start_date, end_date):
     # add param granularity="day" to get tweet count by day (other options : hour, minute)
     query = gen_request_parameters(
-        "(lang:ja OR place_country:JP) "
-        "-is:retweet -is:nullcast "
-        "(#metoo OR #wetoojapan OR #stopfeminicides OR #私は黙らない)",
+        query_string,
         start_time=start_date,
         end_time=end_date,
         tweet_fields="attachments,"
@@ -63,7 +64,7 @@ def create_stream(query, search_args):
     return rs
 
 
-def write_year_of_tweets(output_path):
+def write_year_of_tweets(output_path, query_string):
     year = [
         ('2017-10-01', '2017-11-01'),
         ('2017-11-01', '2017-12-01'),
@@ -85,27 +86,62 @@ def write_year_of_tweets(output_path):
     for month_tuple in year:
         print(f"Retrieving tweets from {month_tuple[0]} to {month_tuple[1]}")
         query = create_request(
+            query_string,
             start_date=month_tuple[0],
             end_date=month_tuple[1]
         )
         stream_search = create_stream(query, search_args)
         file_path = os.path.join(output_path, f"{month_tuple[0]}---{month_tuple[1]}.jsonl")
-        page_number = 0
-        with open(file_path, 'w') as jsonl_file:
-            for page in stream_search.stream():
-                items_number = page.get('meta').get('result_count')
-                page_number += 1
-                print(f"page n°{page_number} with {items_number} elements retrieved")
-                try:
-                    newest_date = page.get('data')[0].get('created_at')
-                    oldest_date = page.get('data')[-1].get('created_at')
-                    print(f"from date {oldest_date} to date {newest_date}")
-                except (IndexError, KeyError):
-                    print("created_at data missing")
-                for tweet in page.get('data'):
+        if os.path.exists(file_path):
+            update_existing_file(file_path, stream_search)
+        else:
+            write_new_file(file_path, stream_search)
+
+
+def update_existing_file(file_path: str, stream_search):
+    done_ids = []
+    for tweet in read_file_generator(file_path):
+        done_ids.append(tweet.get('id'))
+    page_number = 0
+    new_tweets_counter = 0
+    with open(file_path, 'a') as jsonl_file:
+        for page in stream_search.stream():
+            items_number = page.get('meta').get('result_count')
+            page_number += 1
+            print(f"page n°{page_number} with {items_number} elements retrieved")
+            try:
+                newest_date = page.get('data')[0].get('created_at')
+                oldest_date = page.get('data')[-1].get('created_at')
+                print(f"from date {oldest_date} to date {newest_date}")
+            except (IndexError, KeyError):
+                print("created_at data missing")
+            for tweet in page.get('data'):
+                if tweet.get('id') not in done_ids:
                     jsonl_file.write(json.dumps(tweet) + "\n")
+                    new_tweets_counter += 1
+    print(f"{new_tweets_counter} tweets were added to existing file")
+
+
+def write_new_file(file_path: str, stream_search):
+    page_number = 0
+    with open(file_path, 'w') as jsonl_file:
+        for page in stream_search.stream():
+            items_number = page.get('meta').get('result_count')
+            page_number += 1
+            print(f"page n°{page_number} with {items_number} elements retrieved")
+            try:
+                newest_date = page.get('data')[0].get('created_at')
+                oldest_date = page.get('data')[-1].get('created_at')
+                print(f"from date {oldest_date} to date {newest_date}")
+            except (IndexError, KeyError):
+                print("created_at data missing")
+            for tweet in page.get('data'):
+                jsonl_file.write(json.dumps(tweet) + "\n")
 
 
 if __name__ == '__main__':
 
-    write_year_of_tweets("/data")
+    with open(QUERY_FILE_PATH, 'r') as query_file:
+        query_json = json.loads(query_file.read())
+    query = query_json.get('query-19-12-21')
+    write_year_of_tweets(query_string=query, output_path=RAW_DATA_PATH)

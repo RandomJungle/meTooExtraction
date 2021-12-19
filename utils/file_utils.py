@@ -10,6 +10,12 @@ def read_corpus_generator(data_path: str):
                 yield json.loads(entry)
 
 
+def read_file_generator(file_path: str):
+    with open(file_path, 'r') as data_file:
+        for entry in data_file.readlines():
+            yield json.loads(entry)
+
+
 def build_days_dict():
     dates = {}
     start_date = datetime.date(2017, 10, 1)

@@ -50,3 +50,15 @@ Will now remove doubles + tweets in other language than japanese, since these ar
 ------------------------------------------------------------------------------------------------------
 
 12-18-21 : Turns out there was a bug in the translation, most tweets had no translation, meaning the metadata "english_text" contained only text in japanese. I have corrected some issues and restarted it, it should take lots of time again. But I have added a safety net for
+
+------------------------------------------------------------------------------------------------------
+
+12-19-21 : We did some exploration of hashtags, all hashtags found are in a file called hashtags.txt. Based on what we found, here are some observations :
+- Some new hashtags to be requested to complete corpus
+- Some hashtags seem irrelevant, possibly from bots that harvest popular hashtags automatically. Filtering might be necessary, also the corresponding tweets are repetitions of the same content and add noise so could be interesting to remove them. Here is one of them :
+
+コインチェック、保有者26万人に返金　総額460億円
+返金リスト一覧
+https://t.co/LO1KtmPx1W #NEM #ビットコイン #不正アクセス #コインチェック #MeToo
+
+Added all the new tweets with the new hashtags, need to plot hashtag use per day / month to see evolutions of the main hashtags

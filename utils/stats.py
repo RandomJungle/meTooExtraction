@@ -60,7 +60,39 @@ def print_copycats(data_path: str):
     for key, value in Counter(texts).items():
         if value > 1:
             print(f"\n{value} appearances for :\n{key}\n\n" + ("-" * 50))
+
+
+def get_all_hashtags(data_path: str):
+    hashtags_found = []
+    for tweet in read_corpus_generator(data_path):
+        hashtags = tweet.get("entities", dict()).get("hashtags", dict())
+        for hashtag in hashtags:
+            hashtags_found.append(hashtag.get('tag').lower())
+    counter = Counter(hashtags_found)
+    return {key: value for key, value
+            in sorted(counter.items(), key=lambda item: item[1]) if value > 50}
+
+
+def write_all_hashtags(data_path: str, output_path: str):
+    with open(output_path, "w") as output_file:
+        for key, value in get_all_hashtags(data_path).items():
+            output_file.write(f"{value} tweets found with {key}\n")
+
+
+def print_tweets_with_hashtag(data_path: str, hashtag: str):
+    for tweet in read_corpus_generator(data_path):
+        if hashtag in tweet.get('text'):
+            print(tweet.get('text') + "\n\n" + ("-" * 50) + "\n\n")
+
+
+def count_hashtag_per_day(data_path: str, hashtag: str):
+    days = build_days_dict()
+    for tweet in read_corpus_generator(data_path):
+        if hashtag.lower() in tweet.get('text').lower():
+            date = get_day_of_tweet(tweet)
+            days.update({date: days.get(date, 0) + 1})
+    return days
         
 
 if __name__ == "__main__":
-    print_copycats(TRANSLATED_DATA_PATH)
+    print_copycats(CLEAN_DATA_PATH)

@@ -1,0 +1,4 @@
+{
+    "query-17-12-21": "(lang:ja OR place_country:JP) -is:retweet -is:nullcast (#metoo OR #wetoojapan OR #stopfeminicides OR #私は黙らない)",
+    "query-19-12-21": "lang:ja -is:retweet -is:nullcast -#metoo -#wetoojapan -#stopfeminicides -#私は黙らない -#ビットコイン -#不正アクセス -#コインチェック (#ｍｅｔｏｏ OR #セクハラ OR #timesup OR #wetoo OR #集団ストーカー)"
+}
