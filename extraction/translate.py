@@ -87,7 +87,9 @@ def control_language(output_dir):
                 
 
 if __name__ == "__main__":
-
+    control_language(
+        TRANSLATED_DATA_PATH
+    )
     translate_corpus(
         CLEAN_DATA_PATH,
         TRANSLATED_DATA_PATH
