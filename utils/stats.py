@@ -3,9 +3,9 @@ import os
 from collections import OrderedDict, Counter
 from typing import Dict
 
+import utils.paths as paths
 from utils.converters import file_to_month
 from utils.file_utils import read_corpus_generator, build_days_dict, read_file_generator
-from utils.paths import RAW_DATA_PATH, CLEAN_DATA_PATH, TRANSLATED_DATA_PATH
 from utils.tweet_utils import get_day_of_tweet, get_language_of_tweet
 
 
@@ -132,4 +132,4 @@ def print_outliers_user_ids(data_path: str, threshold: int = 1000):
         
 
 if __name__ == "__main__":
-    print_outliers_user_ids(CLEAN_DATA_PATH)
+    print_outliers_user_ids(paths.CLEAN_DATA_PATH)

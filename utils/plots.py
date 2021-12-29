@@ -2,7 +2,7 @@ from typing import List
 
 import matplotlib.pyplot as plt
 
-from utils.paths import RAW_DATA_PATH, CLEAN_DATA_PATH, CLEANER_DATA_PATH
+import utils.paths as paths
 from utils.stats import count_corpus_per_month, count_corpus_per_day, count_languages, count_hashtag_per_day, \
     count_hashtag_per_month, count_tweet_per_user, count_users_tweet_counts
 
@@ -93,6 +93,6 @@ def plot_tweet_counts_per_users(data_path: str):
 
 
 if __name__ == "__main__":
-    plot_tweet_counts_per_users(CLEAN_DATA_PATH)
+    plot_tweet_counts_per_users(paths.CLEAN_DATA_PATH)
 
 

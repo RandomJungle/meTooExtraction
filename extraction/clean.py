@@ -4,7 +4,7 @@ import re
 
 from tqdm import tqdm
 
-from utils.paths import CLEAN_DATA_PATH, CLEANER_DATA_PATH, BOTS_JSON_PATH, TRANSLATED_DATA_PATH
+import utils.paths as paths
 
 
 def remove_doubles(input_dir: str, output_dir: str, language_filter=None) -> None:
@@ -88,8 +88,8 @@ def full_cleaning_pipeline(input_dir: str,
 if __name__ == "__main__":
     
     full_cleaning_pipeline(
-        TRANSLATED_DATA_PATH,
-        CLEANER_DATA_PATH,
-        BOTS_JSON_PATH,
+        paths.TRANSLATED_DATA_PATH,
+        paths.CLEANER_DATA_PATH,
+        paths.BOTS_JSON_PATH,
         language_filter="ja"
     )

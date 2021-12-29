@@ -4,7 +4,7 @@ import os
 from searchtweets import gen_request_parameters, load_credentials, ResultStream
 
 from utils.file_utils import read_file_generator
-from utils.paths import QUERY_FILE_PATH, RAW_DATA_PATH
+import utils.paths as paths
 
 
 def create_request(query_string, start_date, end_date):
@@ -141,7 +141,7 @@ def write_new_file(file_path: str, stream_search):
 
 if __name__ == '__main__':
 
-    with open(QUERY_FILE_PATH, 'r') as query_file:
+    with open(paths.QUERY_FILE_PATH, 'r') as query_file:
         query_json = json.loads(query_file.read())
     query = query_json.get('query-19-12-21')
-    write_year_of_tweets(query_string=query, output_path=RAW_DATA_PATH)
+    write_year_of_tweets(query_string=query, output_path=paths.RAW_DATA_PATH)
