@@ -21,12 +21,10 @@ def translate_file(
             tweet = json.loads(line)
             text = tweet.get('text')
             try:
-                translation = ts.bing(text, from_language=source, to_language=destination)
+                translation = ts.baidu(text, from_language="jp", to_language="fra")
                 tweet.update({f'{destination}_text': translation})
-            except requests.exceptions.HTTPError:
-                translation = ts.sogou(text, from_language=source, to_language=destination)
-                tweet.update({f'{destination}_text': translation})
-            except (IndexError, TypeError):
+                print(translation)
+            except (IndexError, TypeError, requests.exceptions.HTTPError):
                 tweet_id = tweet.get('id')
                 print(f"FAILED TRANSLATION on tweet n° {tweet_id}")
             output_file.write(json.dumps(tweet) + "\n")
@@ -50,12 +48,10 @@ def update_translated_file(
             if tweet_id not in ids_translated:
                 text = tweet.get('text')
                 try:
-                    translation = ts.bing(text, from_language=source, to_language=destination)
+                    translation = ts.baidu(text, from_language="jp", to_language="fra")
                     tweet.update({f'{destination}_text': translation})
-                except requests.exceptions.HTTPError:
-                    translation = ts.sogou(text, from_language=source, to_language=destination)
-                    tweet.update({f'{destination}_text': translation})
-                except (IndexError, TypeError):
+                    print(translation)
+                except (IndexError, TypeError, requests.exceptions.HTTPError):
                     print(f"FAILED TRANSLATION on tweet n° {tweet_id}")
                 output_file.write(json.dumps(tweet) + "\n")
 
@@ -125,17 +121,13 @@ def manual_translate(input_dir, output_dir, destination: str):
 
 
 if __name__ == "__main__":
-    control_language(
-        paths.TRANSLATED_FR_DATA_PATH,
-        "fr"
-    )
     translate_corpus(
-        paths.TRANSLATED_FR_DATA_PATH,
-        paths.TEMP_PATH,
+        paths.FILTERED_DATA_PATH,
+        paths.TEMP_DATA_PATH,
         source="ja",
         destination="fr"
     )
     control_language(
-        paths.TRANSLATED_FR_DATA_PATH,
+        paths.TEMP_DATA_PATH,
         "fr"
     )

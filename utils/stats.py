@@ -129,7 +129,52 @@ def print_outliers_user_ids(data_path: str, threshold: int = 1000):
         if value > threshold:
             outlier_ids.append(key)
             print(f"{key}: {value}")
-        
+
+
+def count_testimonies(data_path: str):
+    problematic_count = 0
+    testimony_count = 0
+    not_testimony_count = 0
+    no_label_count = 0
+    for tweet in read_corpus_generator(data_path):
+        if tweet.get("flag"):
+            problematic_count += 1
+        elif tweet.get('label'):
+            if tweet.get('label') == "testimony":
+                testimony_count += 1
+            if tweet.get('label') == "not_testimony":
+                not_testimony_count += 1
+        else:
+            no_label_count += 1
+    print(f"problematic flags : {problematic_count}")
+    print(f"testimonies : {testimony_count}")
+    print(f"not testimonies : {not_testimony_count}")
+    print(f"no label : {no_label_count}")
+
+
+def write_tweets_to_text(data_path: str, output_path: str):
+    problematic_tweets = []
+    testimony_tweets = []
+    for tweet in read_corpus_generator(data_path):
+        if tweet.get("flag"):
+            problematic_tweets.append(tweet)
+        elif tweet.get('label'):
+            if tweet.get('label') == "testimony":
+                testimony_tweets.append(tweet)
+    with open(output_path, 'w') as output_file:
+        output_file.write(f"PROBLEMATIC TWEETS\n\n\n" + ("*" * 100) + "\n\n")
+        for tweet in problematic_tweets:
+            tweet_en_text = tweet.get('english_text')
+            tweet_ja_text = tweet.get('text')
+            output_file.write(f"{tweet_ja_text}" + "\n\n")
+            output_file.write(f"{tweet_en_text}\n\n" + ("-" * 40) + "\n\n")
+        output_file.write(f"TESTIMONIES\n\n\n" + ("*" * 100) + "\n\n")
+        for tweet in testimony_tweets:
+            tweet_en_text = tweet.get('english_text')
+            tweet_ja_text = tweet.get('text')
+            output_file.write(f"{tweet_ja_text}" + "\n\n")
+            output_file.write(f"{tweet_en_text}\n\n" + ("-" * 40) + "\n\n")
+
 
 if __name__ == "__main__":
-    print_outliers_user_ids(paths.CLEAN_DATA_PATH)
+    write_tweets_to_text(paths.ANNOTATED_DATA_PATH, paths.TWEET_TEXT_FILE_PATH)
