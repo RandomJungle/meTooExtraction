@@ -1,4 +1,3 @@
-import json
 import os
 from collections import OrderedDict, Counter
 from typing import Dict
@@ -6,7 +5,8 @@ from typing import Dict
 import utils.paths as paths
 from utils.converters import file_to_month
 from utils.file_utils import read_corpus_generator, build_days_dict, read_file_generator
-from utils.tweet_utils import get_day_of_tweet, get_language_of_tweet
+from utils.tweet_utils import get_day_of_tweet, get_language_of_tweet, get_timestamp_of_tweet, \
+    convert_timestamp_to_date, convert_timestamp_to_day
 
 
 def count_corpus(data_path: str):
@@ -164,17 +164,54 @@ def write_tweets_to_text(data_path: str, output_path: str):
     with open(output_path, 'w') as output_file:
         output_file.write(f"PROBLEMATIC TWEETS\n\n\n" + ("*" * 100) + "\n\n")
         for tweet in problematic_tweets:
-            tweet_en_text = tweet.get('english_text')
+            tweet_en_text = tweet.get('fr_text')
             tweet_ja_text = tweet.get('text')
             output_file.write(f"{tweet_ja_text}" + "\n\n")
             output_file.write(f"{tweet_en_text}\n\n" + ("-" * 40) + "\n\n")
         output_file.write(f"TESTIMONIES\n\n\n" + ("*" * 100) + "\n\n")
         for tweet in testimony_tweets:
-            tweet_en_text = tweet.get('english_text')
+            tweet_en_text = tweet.get('fr_text')
             tweet_ja_text = tweet.get('text')
             output_file.write(f"{tweet_ja_text}" + "\n\n")
             output_file.write(f"{tweet_en_text}\n\n" + ("-" * 40) + "\n\n")
 
 
+def map_files_to_timestamps(data_path: str):
+    timestamps = {}
+    for file in os.listdir(data_path):
+        file_timestamps = []
+        for tweet in read_file_generator(os.path.join(data_path, file)):
+            file_timestamps.append(get_timestamp_of_tweet(tweet))
+        timestamps.update({file: file_timestamps})
+    return timestamps
+
+
+def convert_timestamp_dict_to_day_dict(timestamp_dict: Dict):
+    day_dict = {}
+    for key, value in timestamp_dict.items():
+        day_dict.update({key: [convert_timestamp_to_day(timestamp) for timestamp in value]})
+    return day_dict
+
+
+def extract_day_dict_from_file(data_path: str):
+    dates_table = {}
+    # all_dates = []
+    timestamps_dict = map_files_to_timestamps(data_path)
+    day_dict = convert_timestamp_dict_to_day_dict(timestamps_dict)
+    # for day_list in day_dict.values():
+    #     all_dates.extend(day_list)
+    counter = 0
+    for key, value in day_dict.items():
+        # for date in set(all_dates):
+        for date in value:
+            dates_table.update({
+                f'row_{counter}': [key, date]
+            })
+            counter += 1
+    return dates_table
+
+
 if __name__ == "__main__":
-    write_tweets_to_text(paths.ANNOTATED_DATA_PATH, paths.TWEET_TEXT_FILE_PATH)
+    time_spans = map_files_to_timestamps(paths.ANNOTATION_CHUNKS)
+    print(time_spans)
+

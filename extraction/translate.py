@@ -1,6 +1,7 @@
 import json
 import os
 import random
+import re
 
 import requests
 import translators as ts
@@ -20,13 +21,15 @@ def translate_file(
         for line in tqdm(input_file.readlines()):
             tweet = json.loads(line)
             text = tweet.get('text')
-            try:
-                translation = ts.baidu(text, from_language="jp", to_language="fra")
-                tweet.update({f'{destination}_text': translation})
-                print(translation)
-            except (IndexError, TypeError, requests.exceptions.HTTPError):
-                tweet_id = tweet.get('id')
-                print(f"FAILED TRANSLATION on tweet n° {tweet_id}")
+            translated = tweet.get(f"{destination}_text")
+            if not translated or re.match("^[a-zA-Z\d]{1,50}$", translated):
+                try:
+                    translation = ts.baidu(text, from_language="jp", to_language="fra")
+                    tweet.update({f'{destination}_text': translation})
+                    print(translation)
+                except (IndexError, TypeError, requests.exceptions.HTTPError):
+                    tweet_id = tweet.get('id')
+                    print(f"FAILED TRANSLATION on tweet n° {tweet_id}")
             output_file.write(json.dumps(tweet) + "\n")
             
             
@@ -47,12 +50,14 @@ def update_translated_file(
             tweet_id = tweet.get('id')
             if tweet_id not in ids_translated:
                 text = tweet.get('text')
-                try:
-                    translation = ts.baidu(text, from_language="jp", to_language="fra")
-                    tweet.update({f'{destination}_text': translation})
-                    print(translation)
-                except (IndexError, TypeError, requests.exceptions.HTTPError):
-                    print(f"FAILED TRANSLATION on tweet n° {tweet_id}")
+                translated = tweet.get(f"{destination}_text")
+                if not translated or re.match("^[a-zA-Z\d]{1,50}$", translated):
+                    try:
+                        translation = ts.baidu(text, from_language="jp", to_language="fra")
+                        tweet.update({f'{destination}_text': translation})
+                        print(translation)
+                    except (IndexError, TypeError, requests.exceptions.HTTPError):
+                        print(f"FAILED TRANSLATION on tweet n° {tweet_id}")
                 output_file.write(json.dumps(tweet) + "\n")
 
             
@@ -121,12 +126,12 @@ def manual_translate(input_dir, output_dir, destination: str):
 
 
 if __name__ == "__main__":
-    translate_corpus(
-        paths.FILTERED_DATA_PATH,
-        paths.TEMP_DATA_PATH,
-        source="ja",
-        destination="fr"
-    )
+    # translate_corpus(
+    #     paths.TRANSLATED_FR_DATA_PATH,
+    #     paths.TEMP_DATA_PATH,
+    #     source="ja",
+    #     destination="fr"
+    # )
     control_language(
         paths.TEMP_DATA_PATH,
         "fr"

@@ -40,4 +40,4 @@ def divide_corpus(data_path: str, output_path, n_folds: int):
 
 
 if __name__ == "__main__":
-    divide_corpus(paths.TRANSLATED_FR_DATA_PATH, paths.ANNOTATION_CHUNKS, 4)
+    divide_corpus(paths.TEMP_DATA_PATH, paths.ANNOTATION_CHUNKS, 4)

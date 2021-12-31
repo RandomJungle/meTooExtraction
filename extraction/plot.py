@@ -1,10 +1,13 @@
 from typing import List
 
 import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
 
 import utils.paths as paths
-from utils.stats import count_corpus_per_month, count_corpus_per_day, count_languages, count_hashtag_per_day, \
-    count_hashtag_per_month, count_tweet_per_user, count_users_tweet_counts
+from extraction.explore import count_corpus_per_month, count_corpus_per_day, count_languages, count_hashtag_per_day, \
+    count_hashtag_per_month, count_tweet_per_user, count_users_tweet_counts, map_files_to_timestamps, \
+    extract_day_dict_from_file
 
 
 def plot_month_counts(data_path: str):
@@ -92,7 +95,14 @@ def plot_tweet_counts_per_users(data_path: str):
     plt.show()
 
 
+def plot_file_timestamps(data_path: str):
+    day_dict = extract_day_dict_from_file(data_path)
+    df = pd.DataFrame.from_dict(day_dict, orient='index', columns=['file', 'day'])
+    ax = sns.stripplot(data=df, x="file", y="day")
+    plt.show()
+
+
 if __name__ == "__main__":
-    plot_tweet_counts_per_users(paths.CLEAN_DATA_PATH)
+    plot_file_timestamps(paths.ANNOTATION_CHUNKS)
 
 
