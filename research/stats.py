@@ -1,12 +1,23 @@
-import json
+import datetime
 import os
 from collections import OrderedDict, Counter
 from typing import Dict
 
 import utils.paths as paths
 from utils.converters import file_to_month
-from utils.file_utils import read_corpus_generator, build_days_dict, read_file_generator
+from utils.file_utils import read_corpus_generator, read_file_generator
 from utils.tweet_utils import get_day_of_tweet, get_language_of_tweet
+
+
+def build_days_dict(start_date, end_date):
+    dates = {}
+    start_date = datetime.date(start_date[0], start_date[1], start_date[2])
+    end_date = datetime.date(end_date[0], end_date[1], end_date[2])
+    delta = datetime.timedelta(days=1)
+    while start_date <= end_date:
+        dates.update({f"{start_date}": 0})
+        start_date += delta
+    return dates
 
 
 def count_corpus(data_path: str):
@@ -24,8 +35,11 @@ def count_corpus_per_month(data_path: str):
     return months
 
 
-def count_corpus_per_day(data_path: str):
-    days = build_days_dict()
+def count_corpus_per_day(
+        data_path: str,
+        start_date=(2017, 10, 1),
+        end_date=(2018, 10, 31)):
+    days = build_days_dict(start_date, end_date)
     for entry in read_corpus_generator(data_path):
         date = get_day_of_tweet(entry)
         days.update({date: days.get(date, 0) + 1})
@@ -87,8 +101,12 @@ def print_tweets_with_hashtag(data_path: str, hashtag: str):
             print(tweet.get('text') + "\n\n" + ("-" * 50) + "\n\n")
 
 
-def count_hashtag_per_day(data_path: str, hashtag: str):
-    days = build_days_dict()
+def count_hashtag_per_day(
+        data_path: str,
+        hashtag: str,
+        start_date=(2017, 10, 1),
+        end_date=(2018, 10, 31)):
+    days = build_days_dict(start_date, end_date)
     for tweet in read_corpus_generator(data_path):
         if hashtag.lower() in tweet.get('text').lower():
             date = get_day_of_tweet(tweet)
@@ -152,29 +170,14 @@ def count_testimonies(data_path: str):
     print(f"no label : {no_label_count}")
 
 
-def write_tweets_to_text(data_path: str, output_path: str):
-    problematic_tweets = []
-    testimony_tweets = []
+def count_public_metrics(data_path: str, metric_name: str):
+    count_dict = {}
     for tweet in read_corpus_generator(data_path):
-        if tweet.get("flag"):
-            problematic_tweets.append(tweet)
-        elif tweet.get('label'):
-            if tweet.get('label') == "testimony":
-                testimony_tweets.append(tweet)
-    with open(output_path, 'w') as output_file:
-        output_file.write(f"PROBLEMATIC TWEETS\n\n\n" + ("*" * 100) + "\n\n")
-        for tweet in problematic_tweets:
-            tweet_en_text = tweet.get('english_text')
-            tweet_ja_text = tweet.get('text')
-            output_file.write(f"{tweet_ja_text}" + "\n\n")
-            output_file.write(f"{tweet_en_text}\n\n" + ("-" * 40) + "\n\n")
-        output_file.write(f"TESTIMONIES\n\n\n" + ("*" * 100) + "\n\n")
-        for tweet in testimony_tweets:
-            tweet_en_text = tweet.get('english_text')
-            tweet_ja_text = tweet.get('text')
-            output_file.write(f"{tweet_ja_text}" + "\n\n")
-            output_file.write(f"{tweet_en_text}\n\n" + ("-" * 40) + "\n\n")
+        metric = tweet.get('public_metrics').get(metric_name)
+        count_dict.update({metric: count_dict.get(metric, 0) + 1})
+    return count_dict
 
 
 if __name__ == "__main__":
-    write_tweets_to_text(paths.ANNOTATED_DATA_PATH, paths.TWEET_TEXT_FILE_PATH)
+    count = count_public_metrics(paths.FINAL_CORPUS_DIR_PATH, "retweet_count")
+    print(count)

@@ -6,6 +6,8 @@ from tqdm import tqdm
 
 import utils.paths as paths
 
+from utils.file_utils import read_corpus_generator, read_file_generator
+
 
 def remove_doubles(input_dir: str, output_dir: str, language_filter=None) -> None:
     for file_name in os.listdir(input_dir):
@@ -89,7 +91,7 @@ if __name__ == "__main__":
     
     full_cleaning_pipeline(
         paths.TRANSLATED_DATA_PATH,
-        paths.CLEANER_DATA_PATH,
+        paths.CLEAN_DATA_PATH,
         paths.BOTS_JSON_PATH,
         language_filter="ja"
     )

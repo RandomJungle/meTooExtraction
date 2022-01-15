@@ -1,4 +1,4 @@
-import datetime
+import csv
 import json
 import os
 
@@ -7,26 +7,16 @@ import utils.paths as paths
 
 def read_corpus_generator(data_path: str):
     for file_name in os.listdir(data_path):
-        with open(os.path.join(data_path, file_name), 'r') as data_file:
-            for entry in data_file.readlines():
-                yield json.loads(entry)
+        if file_name.endswith('.jsonl'):
+            with open(os.path.join(data_path, file_name), 'r') as data_file:
+                for entry in data_file.readlines():
+                    yield json.loads(entry)
 
 
 def read_file_generator(file_path: str):
     with open(file_path, 'r') as data_file:
         for entry in data_file.readlines():
             yield json.loads(entry)
-
-
-def build_days_dict():
-    dates = {}
-    start_date = datetime.date(2017, 10, 1)
-    end_date = datetime.date(2018, 10, 31)
-    delta = datetime.timedelta(days=1)
-    while start_date <= end_date:
-        dates.update({f"{start_date}": 0})
-        start_date += delta
-    return dates
 
 
 def divide_corpus(data_path: str, output_path, n_folds: int):
@@ -39,5 +29,82 @@ def divide_corpus(data_path: str, output_path, n_folds: int):
                 output_file.write(json.dumps(tweet) + "\n")
 
 
+def merge_all_problematic_tweets(input_dir_path, output_file_path):
+    with open(output_file_path, 'w') as output_file:
+        for tweet in read_corpus_generator(input_dir_path):
+            if tweet.get('flag') == 'problematic':
+                print(tweet.get('en_text'))
+                output_file.write(json.dumps(tweet) + "\n")
+
+
+def merge_corpus(input_dir_path, output_file_path):
+    tweets = {}
+    for tweet in read_corpus_generator(input_dir_path):
+        tweet_id = tweet.get('id')
+        if tweet_id not in tweets.keys():
+            if tweet.get('label') == "testimony":
+                tweets.update({tweet_id: tweet})
+    with open(output_file_path, 'w') as output_file:
+        for index, tweet in enumerate(tweets.values()):
+            output_file.write(json.dumps(tweet) + "\n")
+            print(index)
+
+
+def convert_jsonl_corpus_to_csv(input_dir_path, output_csv_path):
+    with open(output_csv_path, 'w') as output_csv_file:
+        csv_writer = csv.writer(output_csv_file, delimiter=";", quotechar='"')
+        csv_writer.writerow([
+            "tweet id",
+            "auteur id",
+            "texte en japonais",
+            "texte en anglais",
+            "texte en français",
+            "label",
+            "date de création",
+            "nombre de retweets",
+            "nombre de reply",
+            "nombre de likes",
+            "nombre de quotes"
+        ])
+        for tweet in read_corpus_generator(input_dir_path):
+            csv_writer.writerow([
+                tweet.get('id'),
+                tweet.get('author_id'),
+                tweet.get('text'),
+                tweet.get('en_text'),
+                tweet.get('fr_text'),
+                tweet.get('label'),
+                tweet.get('created_at'),
+                tweet.get('public_metrics').get('retweet_count'),
+                tweet.get('public_metrics').get('reply_count'),
+                tweet.get('public_metrics').get('like_count'),
+                tweet.get('public_metrics').get('quote_count'),
+            ])
+
+
+def write_tweets_to_text(data_path: str, output_path: str):
+    problematic_tweets = []
+    testimony_tweets = []
+    for tweet in read_corpus_generator(data_path):
+        if tweet.get('label'):
+            if tweet.get('label') == "testimony":
+                testimony_tweets.append(tweet)
+        elif tweet.get("flag"):
+            problematic_tweets.append(tweet)
+    with open(output_path, 'w') as output_file:
+        output_file.write(f"PROBLEMATIC TWEETS\n\n\n" + ("*" * 100) + "\n\n")
+        for tweet in problematic_tweets:
+            tweet_en_text = tweet.get('en_text')
+            tweet_ja_text = tweet.get('text')
+            output_file.write(f"{tweet_ja_text}" + "\n\n")
+            output_file.write(f"{tweet_en_text}\n\n" + ("-" * 40) + "\n\n")
+        output_file.write(f"TESTIMONIES\n\n\n" + ("*" * 100) + "\n\n")
+        for tweet in testimony_tweets:
+            tweet_en_text = tweet.get('en_text')
+            tweet_ja_text = tweet.get('text')
+            output_file.write(f"{tweet_ja_text}" + "\n\n")
+            output_file.write(f"{tweet_en_text}\n\n" + ("-" * 40) + "\n\n")
+
+
 if __name__ == "__main__":
-    divide_corpus(paths.TRANSLATED_FR_DATA_PATH, paths.ANNOTATION_CHUNKS, 4)
+    convert_jsonl_corpus_to_csv(paths.FINAL_CORPUS_DIR_PATH, paths.FINAL_CORPUS_CSV_PATH)
