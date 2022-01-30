@@ -25,4 +25,4 @@ def read_verbs(input_data_path, model="ja_core_news_trf"):
 
 
 if __name__ == "__main__":
-    read_verbs(paths.FINAL_CORPUS_DIR_PATH)
+    read_verbs(paths.FINAL_CORPUS_DIR)

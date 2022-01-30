@@ -127,7 +127,7 @@ def manual_translate(input_dir, output_dir, destination: str):
 
 if __name__ == "__main__":
     # translate_corpus(
-    #     paths.TRANSLATED_FR_DATA_PATH,
+    #     paths.TRANSLATED_FR_DATA_DIR,
     #     paths.TEMP_DATA_PATH,
     #     source="ja",
     #     destination="fr"

@@ -90,8 +90,8 @@ def full_cleaning_pipeline(input_dir: str,
 if __name__ == "__main__":
     
     full_cleaning_pipeline(
-        paths.TRANSLATED_DATA_PATH,
-        paths.CLEAN_DATA_PATH,
+        paths.TRANSLATED_DATA_DIR,
+        paths.CLEAN_DATA_DIR,
         paths.BOTS_JSON_PATH,
         language_filter="ja"
     )

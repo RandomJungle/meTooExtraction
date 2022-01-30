@@ -1,7 +1,7 @@
 import datetime
 import os
 from collections import OrderedDict, Counter
-from typing import Dict
+from typing import Dict, List
 
 import utils.paths as paths
 from utils.converters import file_to_month
@@ -25,6 +25,14 @@ def count_corpus(data_path: str):
     for file_name in os.listdir(data_path):
         total += sum(1 for l in open(os.path.join(data_path, file_name)))
     return total
+
+
+def count_labels(data_path: str, label_key: str):
+    labels = {}
+    for tweet in read_corpus_generator(data_path):
+        label = tweet.get('labels').get(label_key)
+        labels.update({label: labels.get(label, 0) + 1})
+    return labels
 
 
 def count_corpus_per_month(data_path: str):
@@ -86,7 +94,7 @@ def get_all_hashtags(data_path: str):
             hashtags_found.append(hashtag.get('tag').lower())
     counter = Counter(hashtags_found)
     return {key: value for key, value
-            in sorted(counter.items(), key=lambda item: item[1]) if value > 50}
+            in sorted(counter.items(), key=lambda item: item[1]) if value > 1}
 
 
 def write_all_hashtags(data_path: str, output_path: str):
@@ -178,6 +186,53 @@ def count_public_metrics(data_path: str, metric_name: str):
     return count_dict
 
 
+def count_gendered_corpus(data_path: str):
+    count_dict = {}
+    for tweet in read_corpus_generator(data_path):
+        if tweet.get('labels'):
+            genders = tweet.get('labels').get('genders')
+            for gender in genders:
+                count_dict.update({gender: count_dict.get(gender, 0) + 1})
+    return count_dict
+
+
+def count_quote_corpus(data_path: str):
+    count_dict = {}
+    for tweet in read_corpus_generator(data_path):
+        if tweet.get('labels'):
+            quote_types = tweet.get('labels').get('quote_types')
+            if quote_types:
+                for quote_type in quote_types:
+                    count_dict.update({quote_type: count_dict.get(quote_type, 0) + 1})
+            else:
+                count_dict.update({"no quote": count_dict.get("has_no_quote", 0) + 1})
+    return count_dict
+
+
+def count_annotations(data_path: str, label_keys: List[str] = None):
+    count_dict = {}
+    for tweet in read_corpus_generator(data_path):
+        annotations = tweet.get("annotations")
+        if label_keys:
+            annotations = [annotation for annotation in annotations
+                           if annotation.get('label') in label_keys]
+        for annotation in annotations:
+            label = annotation.get('label')
+            count_dict.update({label: count_dict.get(label, 0) + 1})
+    return count_dict
+
+
+def count_annotation_texts(data_path: str, label_key: str):
+    count_dict = {}
+    for tweet in read_corpus_generator(data_path):
+        annotations = [annot for annot in tweet.get("annotations")
+                       if annot.get('label') == label_key]
+        for annotation in annotations:
+            text = annotation.get('text')
+            count_dict.update({text: count_dict.get(text, 0) + 1})
+    return count_dict
+
+
 if __name__ == "__main__":
-    count = count_public_metrics(paths.FINAL_CORPUS_DIR_PATH, "retweet_count")
+    count = count_annotation_texts(paths.LEXICAL_FIELDS_CORPUS_DIR, 'emotion')
     print(count)

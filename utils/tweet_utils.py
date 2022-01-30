@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Dict
+from typing import Dict, List
 
 
 def get_day_of_tweet(tweet: Dict):
@@ -27,3 +27,10 @@ def convert_timestamp_to_date(timestamp: float):
 
 def convert_timestamp_to_day(timestamp: float):
     return datetime.fromtimestamp(timestamp).strftime("%d-%m-%Y")
+
+
+def is_conspiracy_tweet(tweet: Dict, conspiracy_keywords: List):
+    tweet_text = tweet.get('text')
+    if any([keyword in tweet_text for keyword in conspiracy_keywords]):
+        return True
+    return False

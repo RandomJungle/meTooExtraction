@@ -144,4 +144,4 @@ if __name__ == '__main__':
     with open(paths.QUERY_FILE_PATH, 'r') as query_file:
         query_json = json.loads(query_file.read())
     query = query_json.get('query-19-12-21')
-    write_year_of_tweets(query_string=query, output_path=paths.RAW_DATA_PATH)
+    write_year_of_tweets(query_string=query, output_path=paths.RAW_DATA_DIR)
