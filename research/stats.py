@@ -1,12 +1,13 @@
 import datetime
+import json
 import os
 from collections import OrderedDict, Counter
-from typing import Dict, List
+from typing import Dict, List, Callable
 
 import utils.paths as paths
 from utils.converters import file_to_month
 from utils.file_utils import read_corpus_generator, read_file_generator
-from utils.tweet_utils import get_day_of_tweet, get_language_of_tweet
+from utils.tweet_utils import get_day_of_tweet, get_language_of_tweet, get_hour_of_tweet
 
 
 def build_days_dict(start_date, end_date):
@@ -46,11 +47,13 @@ def count_corpus_per_month(data_path: str):
 def count_corpus_per_day(
         data_path: str,
         start_date=(2017, 10, 1),
-        end_date=(2018, 10, 31)):
+        end_date=(2018, 10, 31),
+        filter_function=None):
     days = build_days_dict(start_date, end_date)
-    for entry in read_corpus_generator(data_path):
-        date = get_day_of_tweet(entry)
-        days.update({date: days.get(date, 0) + 1})
+    for tweet in read_corpus_generator(data_path):
+        date = get_day_of_tweet(tweet)
+        if (filter_function and filter_function(tweet)) or not filter_function:
+            days.update({date: days.get(date, 0) + 1})
     return days
 
 
@@ -113,12 +116,14 @@ def count_hashtag_per_day(
         data_path: str,
         hashtag: str,
         start_date=(2017, 10, 1),
-        end_date=(2018, 10, 31)):
+        end_date=(2018, 10, 31),
+        filter_function: Callable = None):
     days = build_days_dict(start_date, end_date)
     for tweet in read_corpus_generator(data_path):
-        if hashtag.lower() in tweet.get('text').lower():
-            date = get_day_of_tweet(tweet)
-            days.update({date: days.get(date, 0) + 1})
+        if (filter_function and filter_function(tweet)) or not filter_function:
+            if hashtag.lower() in tweet.get('text').lower():
+                date = get_day_of_tweet(tweet)
+                days.update({date: days.get(date, 0) + 1})
     return days
 
 
@@ -178,34 +183,37 @@ def count_testimonies(data_path: str):
     print(f"no label : {no_label_count}")
 
 
-def count_public_metrics(data_path: str, metric_name: str):
+def count_public_metrics(data_path: str, metric_name: str, filter_function: Callable = None):
     count_dict = {}
     for tweet in read_corpus_generator(data_path):
-        metric = tweet.get('public_metrics').get(metric_name)
-        count_dict.update({metric: count_dict.get(metric, 0) + 1})
+        if (filter_function and filter_function(tweet)) or not filter_function:
+            metric = tweet.get('public_metrics').get(metric_name)
+            count_dict.update({metric: count_dict.get(metric, 0) + 1})
     return count_dict
 
 
-def count_gendered_corpus(data_path: str):
+def count_gendered_corpus(data_path: str, filter_function: Callable = None):
     count_dict = {}
     for tweet in read_corpus_generator(data_path):
-        if tweet.get('labels'):
-            genders = tweet.get('labels').get('genders')
-            for gender in genders:
-                count_dict.update({gender: count_dict.get(gender, 0) + 1})
+        if (filter_function and filter_function(tweet)) or not filter_function:
+            if tweet.get('labels'):
+                genders = tweet.get('labels').get('genders')
+                for gender in genders:
+                    count_dict.update({gender: count_dict.get(gender, 0) + 1})
     return count_dict
 
 
-def count_quote_corpus(data_path: str):
+def count_quote_corpus(data_path: str, filter_function: Callable = None):
     count_dict = {}
     for tweet in read_corpus_generator(data_path):
-        if tweet.get('labels'):
-            quote_types = tweet.get('labels').get('quote_types')
-            if quote_types:
-                for quote_type in quote_types:
-                    count_dict.update({quote_type: count_dict.get(quote_type, 0) + 1})
-            else:
-                count_dict.update({"no quote": count_dict.get("has_no_quote", 0) + 1})
+        if (filter_function and filter_function(tweet)) or not filter_function:
+            if tweet.get('labels'):
+                quote_types = tweet.get('labels').get('quote_types')
+                if quote_types:
+                    for quote_type in quote_types:
+                        count_dict.update({quote_type: count_dict.get(quote_type, 0) + 1})
+                else:
+                    count_dict.update({"no quote": count_dict.get("has_no_quote", 0) + 1})
     return count_dict
 
 
@@ -233,6 +241,42 @@ def count_annotation_texts(data_path: str, label_key: str):
     return count_dict
 
 
+def count_tweets_per_query(data_path: str, query_json_path: str):
+    with open(query_json_path, 'r') as query_json_file:
+        queries_dict = json.loads(query_json_file.read())
+    results = {}
+    queries_keywords = {}
+    for query_name, query in queries_dict.items():
+        query_list = query.replace('(', '').replace(')', '').split(' ')
+        keywords = [keyword for keyword in query_list if keyword.startswith('#')]
+        negative_keywords = [keyword.replace('-', '') for keyword in query.split(' ') if keyword.startswith('-#')]
+        queries_keywords.update({query_name: {'keywords': keywords, 'negative_keywords': negative_keywords}})
+    for tweet in read_corpus_generator(data_path):
+        tweet_text = tweet.get('text').lower().replace('＃', '#').replace('♯', '#')
+        found = False
+        for query_name, keywords_dict in queries_keywords.items():
+            keywords = keywords_dict.get('keywords')
+            negative_keywords = keywords_dict.get('negative_keywords')
+            if any([keyword in tweet_text for keyword in keywords]) and not \
+                    any([negative in tweet_text for negative in negative_keywords]):
+                results.update({query_name: results.get(query_name, 0) + 1})
+                found = True
+        if not found:
+            # discovered that some tweets use an alternate latin alphabet ?
+            # print(tweet_text)
+            pass
+    return results
+
+
+def count_publication_time(data_path: str, filter_function: Callable = None):
+    count_dict = {}
+    for tweet in read_corpus_generator(data_path):
+        if (filter_function and filter_function(tweet)) or not filter_function:
+            hour = get_hour_of_tweet(tweet)
+            count_dict.update({hour: count_dict.get(hour, 0) + 1})
+    return count_dict
+
+
 if __name__ == "__main__":
-    count = count_annotation_texts(paths.LEXICAL_FIELDS_CORPUS_DIR, 'emotion')
-    print(count)
+    total = count_publication_time(paths.FINAL_CORPUS_DIR)
+    print(total)

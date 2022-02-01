@@ -6,8 +6,6 @@ from tqdm import tqdm
 
 import utils.paths as paths
 
-from utils.file_utils import read_corpus_generator, read_file_generator
-
 
 def remove_doubles(input_dir: str, output_dir: str, language_filter=None) -> None:
     for file_name in os.listdir(input_dir):
