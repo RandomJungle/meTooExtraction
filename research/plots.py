@@ -1,9 +1,7 @@
-import os
-from typing import List, Dict, Callable, Tuple
-
 import matplotlib.pyplot as plt
-import seaborn as sns
+import os
 
+from typing import List, Dict, Callable, Tuple
 from wordcloud import WordCloud
 
 from utils import paths

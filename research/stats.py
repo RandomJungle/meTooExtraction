@@ -1,10 +1,12 @@
 import datetime
 import json
 import os
+
 from collections import OrderedDict, Counter
 from typing import Dict, List, Callable
 
 import utils.paths as paths
+
 from utils.converters import file_to_month
 from utils.file_utils import read_corpus_generator, read_file_generator
 from utils.tweet_utils import get_day_of_tweet, get_language_of_tweet, get_hour_of_tweet
@@ -231,7 +233,7 @@ def count_annotations(data_path: str, label_keys: List[str] = None):
 
 
 def count_annotation_texts(data_path: str, label_key: str):
-    count_dict = {}
+    count_dict = dict()
     for tweet in read_corpus_generator(data_path):
         annotations = [annot for annot in tweet.get("annotations")
                        if annot.get('label') == label_key]

@@ -1,8 +1,8 @@
 import json
 import re
-from typing import Callable, List, Tuple
-
 import spacy
+
+from typing import Callable, List
 from spacy.matcher import Matcher
 from tqdm import tqdm
 
