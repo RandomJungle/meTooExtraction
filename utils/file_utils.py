@@ -1,8 +1,10 @@
 import csv
+
+import chardet
 import json
 import os
 
-from utils.tweet_utils import is_conspiracy_tweet
+from utils import paths
 
 
 def read_corpus_generator(data_path: str):
@@ -13,7 +15,7 @@ def read_corpus_generator(data_path: str):
                     yield json.loads(entry)
 
 
-def read_file_generator(file_path: str):
+def read_jsonl_generator(file_path: str):
     with open(file_path, 'r') as data_file:
         for entry in data_file.readlines():
             yield json.loads(entry)
@@ -60,85 +62,29 @@ def merge_corpus(input_dir_path, output_file_path):
             print(index)
 
 
-def convert_jsonl_corpus_to_csv(input_dir_path, output_csv_path):
-    with open(output_csv_path, 'w') as output_csv_file:
-        csv_writer = csv.writer(output_csv_file, delimiter=";", quotechar='"')
-        csv_writer.writerow([
-            "tweet id",
-            "auteur id",
-            "texte en japonais",
-            "texte en anglais",
-            "texte en français",
-            "label",
-            "date de création",
-            "nombre de retweets",
-            "nombre de reply",
-            "nombre de likes",
-            "nombre de quotes",
-            "genre exprimé"
-        ])
-        for tweet in read_corpus_generator(input_dir_path):
-            csv_writer.writerow([
-                tweet.get('id'),
-                tweet.get('author_id'),
-                tweet.get('text'),
-                tweet.get('en_text'),
-                tweet.get('fr_text'),
-                tweet.get('label'),
-                tweet.get('created_at'),
-                tweet.get('public_metrics').get('retweet_count'),
-                tweet.get('public_metrics').get('reply_count'),
-                tweet.get('public_metrics').get('like_count'),
-                tweet.get('public_metrics').get('quote_count'),
-                tweet.get('labels').get('genders')
-            ])
+def get_char_encoding_of_file(input_path: str):
+    with open(input_path, 'rb') as rawdata:
+        result = chardet.detect(rawdata.read(100000))
+    print(result)
 
 
-def write_tweets_to_text(data_path: str, output_path: str):
-    problematic_tweets = []
-    testimony_tweets = []
-    for tweet in read_corpus_generator(data_path):
-        if tweet.get('label'):
-            if tweet.get('label') == "testimony":
-                testimony_tweets.append(tweet)
-        elif tweet.get("flag"):
-            problematic_tweets.append(tweet)
-    with open(output_path, 'w') as output_file:
-        output_file.write(f"PROBLEMATIC TWEETS\n\n\n" + ("*" * 100) + "\n\n")
-        for tweet in problematic_tweets:
-            tweet_en_text = tweet.get('en_text')
-            tweet_ja_text = tweet.get('text')
-            output_file.write(f"{tweet_ja_text}" + "\n\n")
-            output_file.write(f"{tweet_en_text}\n\n" + ("-" * 40) + "\n\n")
-        output_file.write(f"TESTIMONIES\n\n\n" + ("*" * 100) + "\n\n")
-        for tweet in testimony_tweets:
-            tweet_en_text = tweet.get('en_text')
-            tweet_ja_text = tweet.get('text')
-            output_file.write(f"{tweet_ja_text}" + "\n\n")
-            output_file.write(f"{tweet_en_text}\n\n" + ("-" * 40) + "\n\n")
+def read_variable_dict(variable_dict_json_path: str):
+    with open(variable_dict_json_path, 'r') as variable_dict_file:
+        variable_dict = json.loads(variable_dict_file.read())
+    return variable_dict
 
 
-def create_no_testimony_inclusive_corpus(
-        testimony_corpus_path: str,
-        no_testimony_corpus_path: str,
-        output_path: str,
-        keywords_json_path: str):
-    with open(keywords_json_path, 'r') as keywords_file:
-        conspiracy_keywords = json.loads(keywords_file.read()).get('conspiracy')
-    full_tweet_list = []
-    done_ids = []
-    for tweet in read_corpus_generator(testimony_corpus_path):
-        full_tweet_list.append(tweet)
-        done_ids.append(tweet.get('id'))
-    for tweet in read_corpus_generator(no_testimony_corpus_path):
-        tweet_id = tweet.get('id')
-        if tweet_id not in done_ids and not is_conspiracy_tweet(tweet, conspiracy_keywords):
-            if not tweet.get('label'):
-                tweet.update({'label': 'not_testimony'})
-            full_tweet_list.append(tweet)
-            done_ids.append(tweet_id)
-    with open(output_path, 'w+') as output_file:
-        for tweet in full_tweet_list:
-            output_file.write(json.dumps(tweet) + "\n")
+def read_analysis_csv(analysis_csv_path: str):
+    csv_rows = []
+    with open(analysis_csv_path, 'r') as analysis_csv_file:
+        csv_reader = csv.DictReader(analysis_csv_file)
+        csv_rows.extend([row for row in csv_reader])
+    return csv_rows
 
 
+def read_users_csv(user_csv_path: str):
+    csv_rows = []
+    with open(user_csv_path, 'r') as user_csv_file:
+        csv_reader = csv.DictReader(user_csv_file, delimiter=";")
+        csv_rows.extend([row for row in csv_reader])
+    return csv_rows

@@ -8,7 +8,7 @@ from typing import Dict, List, Callable
 import utils.paths as paths
 
 from utils.converters import file_to_month
-from utils.file_utils import read_corpus_generator, read_file_generator
+from utils.file_utils import read_corpus_generator, read_jsonl_generator, read_variable_dict, read_analysis_csv
 from utils.tweet_utils import get_day_of_tweet, get_language_of_tweet, get_hour_of_tweet
 
 
@@ -28,14 +28,6 @@ def count_corpus(data_path: str):
     for file_name in os.listdir(data_path):
         total += sum(1 for l in open(os.path.join(data_path, file_name)))
     return total
-
-
-def count_labels(data_path: str, label_key: str):
-    labels = {}
-    for tweet in read_corpus_generator(data_path):
-        label = tweet.get('labels').get(label_key)
-        labels.update({label: labels.get(label, 0) + 1})
-    return labels
 
 
 def count_corpus_per_month(data_path: str):
@@ -134,7 +126,7 @@ def count_hashtag_per_month(data_path: str, hashtag: str):
     for file_name in sorted(os.listdir(data_path)):
         key = file_to_month.get(file_name)
         hashtag_count = 0
-        for tweet in read_file_generator(os.path.join(data_path, file_name)):
+        for tweet in read_jsonl_generator(os.path.join(data_path, file_name)):
             if hashtag.lower() in tweet.get('text').lower():
                 hashtag_count += 1
         months.update({key: hashtag_count})
@@ -164,25 +156,13 @@ def print_outliers_user_ids(data_path: str, threshold: int = 1000):
             print(f"{key}: {value}")
 
 
-def count_testimonies(data_path: str):
-    problematic_count = 0
-    testimony_count = 0
-    not_testimony_count = 0
-    no_label_count = 0
+def count_labels(data_path: str):
+    count_dict = {}
     for tweet in read_corpus_generator(data_path):
-        if tweet.get("flag"):
-            problematic_count += 1
-        elif tweet.get('label'):
-            if tweet.get('label') == "testimony":
-                testimony_count += 1
-            if tweet.get('label') == "not_testimony":
-                not_testimony_count += 1
-        else:
-            no_label_count += 1
-    print(f"problematic flags : {problematic_count}")
-    print(f"testimonies : {testimony_count}")
-    print(f"not testimonies : {not_testimony_count}")
-    print(f"no label : {no_label_count}")
+        label = tweet.get('labels', {}).get('category')
+        label = label if label else "not_testimony"
+        count_dict.update({label: count_dict.get(label, 0) + 1})
+    return count_dict
 
 
 def count_public_metrics(data_path: str, metric_name: str, filter_function: Callable = None):
@@ -279,6 +259,31 @@ def count_publication_time(data_path: str, filter_function: Callable = None):
     return count_dict
 
 
+def count_analysis_variable(
+        variable_dict_json_path: str,
+        analysis_csv_path: str):
+    variables_dict = read_variable_dict(variable_dict_json_path)
+    analysis_table = read_analysis_csv(analysis_csv_path)
+    for variable_name, variable_data in variables_dict.items():
+        variable_counts = {}
+        for row in analysis_table:
+            decoded_entry_name = variable_data.get('labels').get(row.get(variable_name))
+            if not decoded_entry_name:
+                missing_values_process = variable_data.get("missing_values")
+                decoded_entry_name = missing_values_process if missing_values_process != "remove" else None
+            if decoded_entry_name:
+                variable_counts.update(
+                    {decoded_entry_name: variable_counts.get(decoded_entry_name, 0) + 1})
+        variable_data.update({"count_dict": variable_counts})
+    return variables_dict
+
+
 if __name__ == "__main__":
-    total = count_publication_time(paths.FINAL_CORPUS_DIR)
-    print(total)
+    # count_analysis_variable(
+    #     paths.VARIABLE_DICT_JSON,
+    #     paths.ANALYSIS_WITH_USER_CSV
+    # )
+    results = count_tweets_per_query(
+        data_path=paths.CLEAN_DATA_DIR,
+        query_json_path="/home/juliette/Projects/meTooExtraction/info/search/queries.json")
+    print(results)

@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import os
 
 from typing import List, Dict, Callable, Tuple
@@ -13,14 +14,36 @@ def create_plot_file_name(file_name: str):
     return os.path.join(paths.VISUALS_DIR, file_name)
 
 
-def pie_chart_from_count_dict(count_dict: Dict, figure_name: str):
+def pie_chart_from_count_dict(count_dict: Dict, save_path: str, title: str = None):
     lists = count_dict.items()
     x, y = zip(*lists)
-    fig1, ax1 = plt.subplots()
-    ax1.pie(y, labels=x, autopct='%1.1f%%',
-            shadow=True, startangle=90)
-    ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
-    plt.savefig(figure_name)
+    fig, ax = plt.subplots(figsize=(10, 5))
+    fig.suptitle(title)
+    ax.pie(y, labels=x, autopct='%1.1f%%', labeldistance=None, startangle=90)
+    ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+    plt.legend(loc='lower left')
+    plt.savefig(save_path)
+
+
+def labeled_pie_chart_from_count_dict(count_dict: Dict, save_path: str, title: str = None):
+    lists = count_dict.items()
+    labels, data = zip(*lists)
+    fig, ax = plt.subplots(figsize=(12, 7), subplot_kw=dict(aspect="equal"))
+    fig.suptitle(title)
+    wedges, texts = ax.pie(data, wedgeprops=dict(width=0.5), startangle=-40)
+    bbox_props = dict(boxstyle="square,pad=0.3", fc="w", ec="k", lw=0.72)
+    kw = dict(arrowprops=dict(arrowstyle="-"),
+              bbox=bbox_props, zorder=0, va="center")
+    for i, p in enumerate(wedges):
+        ang = (p.theta2 - p.theta1) / 2. + p.theta1
+        y = np.sin(np.deg2rad(ang))
+        x = np.cos(np.deg2rad(ang))
+        horizontalalignment = {-1: "right", 1: "left"}[int(np.sign(x))]
+        connectionstyle = "angle,angleA=0,angleB={}".format(ang)
+        kw["arrowprops"].update({"connectionstyle": connectionstyle})
+        ax.annotate(labels[i], xy=(x, y), xytext=(1.35 * np.sign(x), 1.4 * y),
+                    horizontalalignment=horizontalalignment, **kw)
+    plt.savefig(save_path)
 
 
 def histogram_from_count_dict(count_dict: Dict, figure_name: str):
@@ -63,6 +86,14 @@ def scatter_from_count_dict(count_dict: Dict, x_label: str, y_label: str, figure
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.savefig(figure_name)
+
+
+def plot_labels(data_path: str, save_path: str):
+    count_dict = stats.count_labels(data_path)
+    pie_chart_from_count_dict(
+        count_dict,
+        save_path,
+        title="Répartition des tweets entre les annotations de témoignage")
 
 
 def plot_month_counts(data_path: str, figure_name: str):
@@ -231,6 +262,19 @@ def plot_hour_of_tweet(data_path: str, figure_name: str):
     plt.savefig(figure_name)
 
 
+def plot_analysis_pie_charts(
+        variable_dict_json_path: str,
+        analysis_csv_path: str):
+    variables_dict = stats.count_analysis_variable(
+        variable_dict_json_path=variable_dict_json_path,
+        analysis_csv_path=analysis_csv_path)
+    for variable_name, variable_data in variables_dict.items():
+        pie_chart_from_count_dict(
+            count_dict=variable_data.get("count_dict"),
+            save_path=os.path.join(paths.VISUALS_DIR, f"{variable_name}_pie_chart.png"),
+            title=variable_data.get("title"))
+
+
 def plot_all_metrics():
     plot_days_count_testimonies(paths.FINAL_CORPUS_DIR, create_plot_file_name("comparison_tweets_per_day_count.png"), 5)
     plot_days_counts(paths.FINAL_CORPUS_DIR, create_plot_file_name("testimony_tweets_per_day_count.png"), is_testimony, 5)
@@ -289,4 +333,7 @@ def plot_all_metrics():
 
 
 if __name__ == "__main__":
-    plot_all_metrics()
+    plot_analysis_pie_charts(
+        paths.VARIABLE_DICT_JSON,
+        paths.ANALYSIS_WITH_USER_CSV
+    )

@@ -1,0 +1,123 @@
+{
+  "TYPE": {
+    "title": "Répartition des types de tweets",
+    "labels": {
+      "1": "Tweet original",
+      "2": "Réponse",
+      "3": "Citation",
+      "4": "Partage média"
+    }
+  },
+  "PERS": {
+    "title": "Répartition des tweets en fonction de l'énonciation",
+    "labels": {
+      "1": "1ère personne",
+      "2": "2ème personne",
+      "3": "Ambigu"
+    }
+  },
+  "ENVIOL": {
+    "title": "Répartition des tweets selon le degré d'explicitation des violences",
+    "labels": {
+      "1": "Évocation des faits",
+      "2": "Description des faits",
+      "3": "Description et qualification des faits",
+      "4": "Qualification des faits"
+    }
+  },
+  "VIOLDEC": {
+    "title": "Répartition des tweets selon violences décrites",
+    "missing_values": "Valeur manquante",
+    "labels": {
+      "1": "Brimades et agissements sexistes ",
+      "2": "Harcèlement",
+      "3": "Agressions sexuelles",
+      "4": "Crimes"
+    }
+  },
+  "DEUVIOL": {
+    "title": "Répartition des tweets selon la mention du phénomène de victimisation secondaire",
+    "labels": {
+      "1": "Pas de mention du deuxième viol",
+      "2": "Mention du deuxième viol"
+    }
+  },
+  "SPHERE": {
+    "title": "Répartition des tweets selon les sphères sociales des violences",
+    "missing_values": "Valeur manquante",
+    "labels": {
+      "1": "Espace public",
+      "2": "Milieu scolaire",
+      "3": "Sphère professionnelle",
+      "4": "Milieu médical",
+      "5": "Télécommunications",
+      "6": "Sphère familiale",
+      "7": "Sphère intime",
+      "8": "Institutions"
+    }
+  },
+  "TEMP": {
+    "title": "Répartition des tweets selon la temporalité des violences",
+    "missing_values": "Valeur manquante",
+    "labels": {
+      "1": "Faits anciens",
+      "2": "Faits présents ou proches",
+      "3": "Faits continus"
+    }
+  },
+  "RELAGR": {
+    "title": "Répartition des tweets selon la relation entre l'agresseur et la victime",
+    "missing_values": "Valeur manquante",
+    "labels": {
+      "1": "Inconnu",
+      "2": "Professeur, moniteur, enseignant",
+      "3": "Supérieur, Employeur",
+      "4": "Collègue, camarade, ami",
+      "5": "Parent, membre de la famille",
+      "6": "Conjoint, petit-ami ou ex",
+      "7": "Police, médecin, conseiller\npour victimes de violences sexuelles"
+    }
+  },
+  "POSPAR": {
+    "title": "Répartition des tweets exprimant la possibilité pour la victime de parler des violences",
+    "missing_values": "Valeur manquante",
+    "labels": {
+      "1": "Impossibilité de parler",
+      "2": "Possibilité de parler entraînant\nune victimisation secondaire",
+      "3": "Possibilité de parler entraînant\nune conséquence positive",
+      "4": "Regret de ne pas avoir\nparlé/envie de parler"
+    }
+  },
+  "FREQ": {
+    "title": "Répartition des tweets selon la fréquence des violences",
+    "missing_values": "Valeur manquante",
+    "labels": {
+      "1": "Unique",
+      "2": "Multiple"
+    }
+  },
+  "COMM": {
+    "title": "Répartition des tweets selon la présence d'un commentaire général sur les violences sexuelles",
+    "labels": {
+      "1": "Pas de commentaire",
+      "2": "Présence d'un commentaire"
+    }
+  },
+  "Feminist": {
+    "title": "Répartition des tweets écrits par des féministes",
+    "labels": {
+      "0": "Non féministe",
+      "1": "Féministe",
+      "2": "Potentiellement féministe"
+    }
+  },
+  "Gender": {
+    "title": "Répartition des tweets selon le genre de l'utilisateur",
+    "missing_values": "genre indéterminé",
+    "labels": {
+      "1": "Femme",
+      "2": "Homme",
+      "3": "Personne trans ou non binaire"
+    }
+  }
+}

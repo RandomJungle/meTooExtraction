@@ -3,7 +3,7 @@ import os
 
 from searchtweets import gen_request_parameters, load_credentials, ResultStream
 
-from utils.file_utils import read_file_generator
+from utils.file_utils import read_jsonl_generator
 import utils.paths as paths
 
 
@@ -100,7 +100,7 @@ def write_year_of_tweets(output_path, query_string):
 
 def update_existing_file(file_path: str, stream_search):
     done_ids = []
-    for tweet in read_file_generator(file_path):
+    for tweet in read_jsonl_generator(file_path):
         done_ids.append(tweet.get('id'))
     page_number = 0
     new_tweets_counter = 0
