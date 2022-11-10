@@ -1,6 +1,8 @@
 import json
 import os
+import sys
 
+sys.path.append('/home/juliette/projects/search-tweets-python')
 from searchtweets import gen_request_parameters, load_credentials, ResultStream
 
 from utils.file_utils import read_jsonl_generator
@@ -79,6 +81,18 @@ def write_year_of_tweets(output_path, query_string):
         ('2018-08-01', '2018-09-01'),
         ('2018-09-01', '2018-10-01'),
         ('2018-10-01', '2018-11-01'),
+        ('2018-11-01', '2018-12-01'),
+        ('2018-12-01', '2019-01-01'),
+        ('2019-01-01', '2019-02-01'),
+        ('2019-02-01', '2019-03-01'),
+        ('2019-03-01', '2019-04-01'),
+        ('2019-04-01', '2019-05-01'),
+        ('2019-05-01', '2019-06-01'),
+        ('2019-06-01', '2019-07-01'),
+        ('2019-07-01', '2019-08-01'),
+        ('2019-08-01', '2019-09-01'),
+        ('2019-09-01', '2019-10-01'),
+        ('2019-10-01', '2019-11-01'),
     ]
     search_args = load_credentials("~/.twitter_keys.yaml",
                                    yaml_key="search_tweets_api",
@@ -143,5 +157,5 @@ if __name__ == '__main__':
 
     with open(paths.QUERY_FILE_PATH, 'r') as query_file:
         query_json = json.loads(query_file.read())
-    query = query_json.get('query-19-12-21')
+    query = query_json.get('query-09-11-22')
     write_year_of_tweets(query_string=query, output_path=paths.RAW_DATA_DIR)

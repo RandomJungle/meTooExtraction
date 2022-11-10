@@ -104,7 +104,7 @@ def plot_month_counts(data_path: str, figure_name: str):
     plt.plot(x, y)
     plt.xticks(rotation=45)
     fig.set_size_inches(8, 10)
-    plt.savefig(figure_name)
+    plt.savefig(create_plot_file_name(figure_name))
     
     
 def plot_days_counts(data_path: str, figure_name: str, filter_function: Callable = None, every_nth: int = 15):
@@ -151,7 +151,7 @@ def plot_hashtags_per_day_count(
         hashtags: List[str],
         figure_name: str,
         start_date: Tuple = (2017, 10, 1),
-        end_date: Tuple = (2017, 11, 1),
+        end_date: Tuple = (2019, 11, 1),
         every_nth: int = 15,
         filter_function: Callable = None):
     fig, ax = plt.subplots()
@@ -173,11 +173,12 @@ def plot_hashtags_per_day_count(
         if n % every_nth != 0:
             label.set_visible(False)
     plt.legend(loc='upper right')
-    plt.savefig(figure_name)
+    plt.savefig(create_plot_file_name(figure_name))
 
 
 def plot_hashtags_per_month_count(data_path: str, hashtags: List[str], figure_name: str):
     plt.rcParams["font.family"] = "Noto Sans CJK JP"
+    plt.figure(figsize=[15, 10])
     for hashtag in hashtags:
         hashtag_counter = stats.count_hashtag_per_month(data_path, hashtag)
         lists = hashtag_counter.items()
@@ -185,7 +186,7 @@ def plot_hashtags_per_month_count(data_path: str, hashtags: List[str], figure_na
         plt.plot(x, y, label=hashtag)
     plt.xticks(rotation=45)
     plt.legend(loc='upper right')
-    plt.savefig(figure_name)
+    plt.savefig(create_plot_file_name(figure_name))
     
     
 def plot_languages(data_path: str, figure_name: str):
@@ -333,7 +334,15 @@ def plot_all_metrics():
 
 
 if __name__ == "__main__":
-    plot_analysis_pie_charts(
-        paths.VARIABLE_DICT_JSON,
-        paths.ANALYSIS_WITH_USER_CSV
+    plot_hashtags_per_day_count(
+        data_path=paths.RAW_DATA_DIR,
+        hashtags=[
+            "#metoo",
+            "#wetoojapan",
+            "#私は黙らない",
+            "#ｍｅｔｏｏ",
+            "#セクハラ",
+            "#wetoo"
+        ],
+        figure_name="hashtag distribution per day on raw corpus"
     )
