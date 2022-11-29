@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import sys
 
 sys.path.append('/home/juliette/projects/search-tweets-python')
@@ -66,34 +67,37 @@ def create_stream(query, search_args):
     return rs
 
 
-def write_year_of_tweets(output_path, query_string):
-    year = [
-        ('2017-10-01', '2017-11-01'),
-        ('2017-11-01', '2017-12-01'),
-        ('2017-12-01', '2018-01-01'),
-        ('2018-01-01', '2018-02-01'),
-        ('2018-02-01', '2018-03-01'),
-        ('2018-03-01', '2018-04-01'),
-        ('2018-04-01', '2018-05-01'),
-        ('2018-05-01', '2018-06-01'),
-        ('2018-06-01', '2018-07-01'),
-        ('2018-07-01', '2018-08-01'),
-        ('2018-08-01', '2018-09-01'),
-        ('2018-09-01', '2018-10-01'),
-        ('2018-10-01', '2018-11-01'),
-        ('2018-11-01', '2018-12-01'),
-        ('2018-12-01', '2019-01-01'),
-        ('2019-01-01', '2019-02-01'),
-        ('2019-02-01', '2019-03-01'),
-        ('2019-03-01', '2019-04-01'),
-        ('2019-04-01', '2019-05-01'),
-        ('2019-05-01', '2019-06-01'),
-        ('2019-06-01', '2019-07-01'),
-        ('2019-07-01', '2019-08-01'),
-        ('2019-08-01', '2019-09-01'),
-        ('2019-09-01', '2019-10-01'),
-        ('2019-10-01', '2019-11-01'),
-    ]
+def make_year_from_start_end(start, end):
+    year = []
+    start_date_match = re.match(
+        r"(?P<start_year>\d{4})\D(?P<start_month>\d{2})", start)
+    end_date_match = re.match(
+        r"(?P<end_year>\d{4})\D(?P<end_month>\d{2})", end)
+    start_year = int(start_date_match.group("start_year"))
+    start_month = int(start_date_match.group("start_month"))
+    end_year = int(end_date_match.group("end_year"))
+    end_month = int(end_date_match.group("end_month"))
+    while start_year <= end_year:
+        while start_month < 12 and not (start_year == end_year and start_month == end_month):
+            year.append((
+                f"{start_year}-{str(start_month).zfill(2)}-01",
+                f"{start_year}-{str(start_month + 1).zfill(2)}-01"))
+            start_month += 1
+        if start_year == end_year and start_month == end_month:
+            break
+        year.append((
+            f"{start_year}-{str(start_month).zfill(2)}-01",
+            f"{start_year + 1}-01-01"))
+        start_year += 1
+        start_month = 1
+    return year
+
+
+def write_year_of_tweets(output_path, query_dict):
+    query_string = query_dict.get("query")
+    year = make_year_from_start_end(
+        start=query_dict.get('start'),
+        end=query_dict.get('end'))
     search_args = load_credentials("~/.twitter_keys.yaml",
                                    yaml_key="search_tweets_api",
                                    env_overwrite=False)
@@ -157,5 +161,5 @@ if __name__ == '__main__':
 
     with open(paths.QUERY_FILE_PATH, 'r') as query_file:
         query_json = json.loads(query_file.read())
-    query = query_json.get('query-09-11-22')
-    write_year_of_tweets(query_string=query, output_path=paths.RAW_DATA_DIR)
+    query_dict = query_json.get('query-japan-20-11-22')
+    write_year_of_tweets(query_dict=query_dict, output_path=paths.JAPAN_LARGE_QUERY_RAW_DIR)

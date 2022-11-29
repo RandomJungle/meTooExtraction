@@ -1,5 +1,27 @@
 {
-    "query-17-12-21": "(lang:ja OR place_country:JP) -is:retweet -is:nullcast (#metoo OR #wetoojapan OR #stopfeminicides OR #私は黙らない)",
-    "query-19-12-21": "lang:ja -is:retweet -is:nullcast -#metoo -#wetoojapan -#stopfeminicides -#私は黙らない -#ビットコイン -#不正アクセス -#コインチェック (#ｍｅｔｏｏ OR #セクハラ OR #timesup OR #wetoo OR #集団ストーカー)",
-    "query-09-11-22": "(lang:ja OR place_country:JP) -is:nullcast -集団ストーカー -#ビットコイン -#不正アクセス -#コインチェック (#metoo OR #wetoojapan OR #私は黙らない OR #ｍｅｔｏｏ OR #セクハラ OR #wetoo)"
+    "query-japan-17-12-21": {
+        "query": "(lang:ja OR place_country:JP) -is:retweet -is:nullcast (#metoo OR #wetoojapan OR #stopfeminicides OR #私は黙らない)",
+        "start": "2017-10-01",
+        "end": "2018-11-01"
+    },
+    "query-japan-19-12-21": {
+        "query": "lang:ja -is:retweet -is:nullcast -#metoo -#wetoojapan -#stopfeminicides -#私は黙らない -#ビットコイン -#不正アクセス -#コインチェック (#ｍｅｔｏｏ OR #セクハラ OR #timesup OR #wetoo OR #集団ストーカー)",
+        "start": "2017-10-01",
+        "end": "2018-11-01"
+    },
+    "query-japan-09-11-22": {
+        "query": "(lang:ja OR place_country:JP) -is:nullcast -集団ストーカー -#ビットコイン -#不正アクセス -#コインチェック (#metoo OR #wetoojapan OR #私は黙らない OR #ｍｅｔｏｏ OR #セクハラ OR #wetoo)",
+        "start": "2017-10-01",
+        "end": "2018-11-01"
+    },
+    "query-japan-20-11-22": {
+        "query": "(lang:ja OR place_country:JP) -is:nullcast -集団ストーカー -#ビットコイン -#不正アクセス -#コインチェック (#ｍｅｔｏｏ OR #セクハラ OR #timesup OR #wetoo OR #集団ストーカー OR #metoo OR #wetoojapan OR #stopfeminicides OR #私は黙らない OR セクハラ OR セクシュアルハラスメント OR 性的嫌がらせ OR パワハラ OR マタハラ OR 痴漢 OR ちかん OR チカン OR 性暴力 OR 性暴行 OR 性犯罪 OR 性的犯罪 OR 小児愛 OR 強制わいせつ OR 凌辱 OR レイプ OR 盗撮 OR イタズラ OR 虐待 OR 準強姦 OR セカンドレイプ OR 露出狂 OR デイトレイプ OR 性的偏見 OR 性偏見 OR 性的被害 OR 性被害 OR 強制性交 OR 強姦 OR 私は黙らない OR Kutoo OR フラワーデモ OR 同意 OR 合意 OR #セクハラ OR #セクシュアルハラスメント OR #性的嫌がらせ OR #パワハラ OR #マタハラ OR #痴漢 OR #ちかん OR #チカン OR #性暴力 OR #性暴行 OR #性犯罪 OR #性的犯罪 OR #小児愛 OR #強制わいせつ OR #凌辱 OR #レイプ OR #盗撮 OR #イタズラ OR #虐待 OR #準強姦 OR #セカンドレイプ OR #露出狂 OR #デイトレイプ OR #性的偏見 OR #性偏見 OR #性的被害 OR #性被害 OR #強制性交 OR #強姦 OR #私は黙らない OR #Kutoo OR #フラワーデモ OR #同意 OR #合意)",
+        "start": "2015-01-01",
+        "end": "2022-11-01"
+    },
+    "query-france-20-11-22": {
+        "query": "(lang:fr OR place_country:FR) -is:nullcast (#MeToo or #MoiAussi or #BalanceTonPorc or #MeTooGay or #MeTooInceste or #MeTooCinema or #BalanceTonYoutubeur or #MeTooPolitique or #MeTooTheatre or #BalanceTaStartup or #MeTooMedias or #StopFeminicide or #Sciencesporcs or \"harcèlement sexuel\" or \"agression sexuelle\" or \"viol\" or \"violences sexuelles\" or \"violences sexistes\" or féminicide or \"violences conjugales\" or inceste or pédophilie or pédocriminalité or \"abusé sexuellement\" or \"abusée sexuellement\" or \"abuser sexuellement\" or \"abus sexuel\" or \"agressé sexuellement\" or \"agressée sexuellement\" or \"agresser sexuellement\" or violé or violée or violer)",
+        "start": "2015-01-01",
+        "end": "2022-11-01"
+    }
 }
