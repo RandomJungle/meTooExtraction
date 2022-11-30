@@ -11,7 +11,6 @@ import utils.paths as paths
 
 
 def create_request(query_string, start_date, end_date):
-    # add param granularity="day" to get tweet count by day (other options : hour, minute)
     query = gen_request_parameters(
         query_string,
         start_time=start_date,
@@ -54,7 +53,8 @@ def create_request(query_string, start_date, end_date):
                      "id,"
                      "name,"
                      "place_type",
-        results_per_call=100
+        results_per_call=100,
+        granularity=None    # set this to "day" to get buckets of tweets (don't see the point)
     )
     return query
 
@@ -91,6 +91,13 @@ def make_year_from_start_end(start, end):
         start_year += 1
         start_month = 1
     return year
+
+
+def make_output_dir(output_path: str, query_name: str):
+    output_dir = os.path.join(output_path, query_name)
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
+    return output_dir
 
 
 def write_year_of_tweets(output_path, query_dict):
@@ -161,5 +168,7 @@ if __name__ == '__main__':
 
     with open(paths.QUERY_FILE_PATH, 'r') as query_file:
         query_json = json.loads(query_file.read())
-    query_dict = query_json.get('query-japan-20-11-22')
-    write_year_of_tweets(query_dict=query_dict, output_path=paths.JAPAN_LARGE_QUERY_RAW_DIR)
+    query_key = 'query-france-29-11-22'
+    query_dict = query_json.get(query_key)
+    output_raw_dir = make_output_dir(paths.JAPAN_RAW_ROOT, query_key)
+    write_year_of_tweets(query_dict=query_dict, output_path=output_raw_dir)
