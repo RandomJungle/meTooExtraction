@@ -168,7 +168,7 @@ if __name__ == '__main__':
 
     with open(paths.QUERY_FILE_PATH, 'r') as query_file:
         query_json = json.loads(query_file.read())
-    query_key = 'query-france-29-11-22'
+    query_key = 'query-japan-30-11-22'
     query_dict = query_json.get(query_key)
     output_raw_dir = make_output_dir(paths.JAPAN_RAW_ROOT, query_key)
     write_year_of_tweets(query_dict=query_dict, output_path=output_raw_dir)

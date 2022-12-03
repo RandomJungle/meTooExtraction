@@ -278,12 +278,26 @@ def count_analysis_variable(
     return variables_dict
 
 
+def count_word_frequency(data_path: str, keywords: List[str] = None):
+    count_dict = {}
+    for tweet in read_corpus_generator(data_path):
+        if not keywords:
+            for word in tweet.get("text").split(" "):
+                count_dict.update({word: count_dict.get(word, 0) + 1})
+        else:
+            for keyword in keywords:
+                if keyword in tweet.get("text"):
+                    count_dict.update({keyword: count_dict.get(keyword, 0) + 1})
+    return dict(sorted(count_dict.items(), key=lambda item: item[1]))
+
+
 if __name__ == "__main__":
-    # count_analysis_variable(
-    #     paths.VARIABLE_DICT_JSON,
-    #     paths.ANALYSIS_WITH_USER_CSV
-    # )
-    results = count_tweets_per_query(
-        data_path=paths.CLEAN_DATA_DIR,
-        query_json_path="/home/juliette/Projects/meTooExtraction/info/search/queries.json")
-    print(results)
+    with open(paths.QUERY_FILE_PATH, 'r') as query_file:
+        query_json = json.loads(query_file.read())
+    query_key = 'query-japan-30-11-22'
+    query_dict = query_json.get(query_key)
+    result = count_word_frequency(
+        data_path=paths.JAPAN_QUERY_30_01_22,
+        keywords=query_dict.get("query").replace(")", "").replace("(", "").split(" ")
+    )
+    print(result)
