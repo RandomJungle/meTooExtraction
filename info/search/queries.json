@@ -14,8 +14,8 @@
     "query-japan-09-11-22": {
         "query": "(lang:ja OR place_country:JP) -is:nullcast -集団ストーカー -#ビットコイン -#不正アクセス -#コインチェック (#metoo OR #wetoojapan OR #私は黙らない OR #ｍｅｔｏｏ OR #セクハラ OR #wetoo)",
         "start": "2017-10-01",
-        "end": "2018-11-01",
-        "description": "new queries (ran fully with success) extended to new hashtags in order to increment on the avilable data"
+        "end": "2019-11-01",
+        "description": "new queries (ran fully with success) extended to new hashtags in order to increment on the available data, includes retweet"
     },
     "query-japan-20-11-22": {
         "query": "(lang:ja OR place_country:JP) -is:nullcast -集団ストーカー -#ビットコイン -#不正アクセス -#コインチェック (#ｍｅｔｏｏ OR #セクハラ OR #timesup OR #wetoo OR #集団ストーカー OR #metoo OR #wetoojapan OR #stopfeminicides OR #私は黙らない OR セクハラ OR セクシュアルハラスメント OR 性的嫌がらせ OR パワハラ OR マタハラ OR 痴漢 OR ちかん OR チカン OR 性暴力 OR 性暴行 OR 性犯罪 OR 性的犯罪 OR 小児愛 OR 強制わいせつ OR 凌辱 OR レイプ OR 盗撮 OR イタズラ OR 虐待 OR 準強姦 OR セカンドレイプ OR 露出狂 OR デイトレイプ OR 性的偏見 OR 性偏見 OR 性的被害 OR 性被害 OR 強制性交 OR 強姦 OR 私は黙らない OR Kutoo OR フラワーデモ OR 同意 OR 合意 OR #セクハラ OR #セクシュアルハラスメント OR #性的嫌がらせ OR #パワハラ OR #マタハラ OR #痴漢 OR #ちかん OR #チカン OR #性暴力 OR #性暴行 OR #性犯罪 OR #性的犯罪 OR #小児愛 OR #強制わいせつ OR #凌辱 OR #レイプ OR #盗撮 OR #イタズラ OR #虐待 OR #準強姦 OR #セカンドレイプ OR #露出狂 OR #デイトレイプ OR #性的偏見 OR #性偏見 OR #性的被害 OR #性被害 OR #強制性交 OR #強姦 OR #私は黙らない OR #Kutoo OR #フラワーデモ OR #同意 OR #合意)",
@@ -45,12 +45,12 @@
         "query": "(lang:ja OR place_country:JP) -is:nullcast -集団ストーカー -#ビットコイン -#不正アクセス -#コインチェック (#ｍｅｔｏｏ OR #セクハラ OR #timesup OR #wetoo OR #集団ストーカー OR #metoo OR #wetoojapan OR #stopfeminicides OR #私は黙らない OR セクハラ OR セクシュアルハラスメント OR 性的嫌がらせ OR パワハラ OR マタハラ OR 痴漢 OR ちかん OR チカン OR 性暴力 OR 性暴行 OR 性犯罪 OR 性的犯罪 OR 小児愛 OR 強制わいせつ OR 凌辱 OR レイプ OR 盗撮 OR 準強姦 OR セカンドレイプ OR 露出狂 OR デイトレイプ OR 性的偏見 OR 性偏見 OR 性的被害 OR 性被害 OR 強制性交 OR 強姦 OR 私は黙らない OR Kutoo OR フラワーデモ OR #セクハラ OR #セクシュアルハラスメント OR #性的嫌がらせ OR #パワハラ OR #マタハラ OR #痴漢 OR #ちかん OR #チカン OR #性暴力 OR #性暴行 OR #性犯罪 OR #性的犯罪 OR #小児愛 OR #強制わいせつ OR #凌辱 OR #レイプ OR #盗撮 OR #準強姦 OR #セカンドレイプ OR #露出狂 OR #デイトレイプ OR #性的偏見 OR #性偏見 OR #性的被害 OR #性被害 OR #強制性交 OR #強姦 OR #私は黙らない OR #Kutoo OR #フラワーデモ)",
         "start": "2016-01-01",
         "end": "2017-10-01",
-        "description": "Query to obtain tweets from japan before metoo era. kinda generalistic because all the hashtags we used previously had not surfaced yet."
+        "description": "Ran successfully. Query to obtain tweets from japan before metoo era. kinda generalist because all the hashtags we used previously had not surfaced yet."
     },
     "query-japan-18-12-22": {
         "query": "(lang:ja OR place_country:JP) -is:nullcast -集団ストーカー -#ビットコイン -#不正アクセス -#コインチェック (#ｍｅｔｏｏ OR #セクハラ OR #timesup OR #wetoo OR #集団ストーカー OR #metoo OR #wetoojapan OR #stopfeminicides OR #私は黙らない OR セクハラ OR セクシュアルハラスメント OR 性的嫌がらせ OR パワハラ OR マタハラ OR 痴漢 OR ちかん OR チカン OR 性暴力 OR 性暴行 OR 性犯罪 OR 性的犯罪 OR 小児愛 OR 強制わいせつ OR 凌辱 OR レイプ OR 盗撮 OR 準強姦 OR セカンドレイプ OR 露出狂 OR デイトレイプ OR 性的偏見 OR 性偏見 OR 性的被害 OR 性被害 OR 強制性交 OR 強姦 OR 私は黙らない OR Kutoo OR フラワーデモ OR #セクハラ OR #セクシュアルハラスメント OR #性的嫌がらせ OR #パワハラ OR #マタハラ OR #痴漢 OR #ちかん OR #チカン OR #性暴力 OR #性暴行 OR #性犯罪 OR #性的犯罪 OR #小児愛 OR #強制わいせつ OR #凌辱 OR #レイプ OR #盗撮 OR #準強姦 OR #セカンドレイプ OR #露出狂 OR #デイトレイプ OR #性的偏見 OR #性偏見 OR #性的被害 OR #性被害 OR #強制性交 OR #強姦 OR #私は黙らない OR #Kutoo OR #フラワーデモ)",
-        "start": "2016-07-02",
+        "start": "2017-03-06",
         "end": "2017-10-01",
-        "description": "Exactly the same query as 30-11-22, I ran out of my monthly tweet cap so had to start from where I stopped. Thsi is to be launched when the cap is updated"
+        "description": "Ran successfully. Exactly the same query as 30-11-22, I ran out of my monthly tweet cap so had to start from where I stopped. This is to be launched when the cap is updated"
     }
 }

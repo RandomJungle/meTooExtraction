@@ -1,4 +1,5 @@
 import csv
+from typing import List, Dict
 
 import chardet
 import json
@@ -21,6 +22,11 @@ def read_jsonl_generator(file_path: str):
             yield json.loads(entry)
 
 
+def read_jsonl_list(file_path: str) -> List[Dict]:
+    with open(file_path, 'r') as data_file:
+        return [json.loads(line) for line in data_file.readlines()]
+
+
 def read_corpus_list(data_path: str):
     tweets = []
     for file_name in os.listdir(data_path):
@@ -28,6 +34,14 @@ def read_corpus_list(data_path: str):
             with open(os.path.join(data_path, file_name), 'r') as data_file:
                 for tweet in data_file.readlines():
                     tweets.append(json.loads(tweet))
+    return tweets
+
+
+def select_tweets_from_ids(data_path: str, tweet_ids: List[int]):
+    tweets = []
+    for tweet in read_corpus_generator(data_path):
+        if tweet.get('id') in tweet_ids:
+            tweets.append(tweet)
     return tweets
 
 

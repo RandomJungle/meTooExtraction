@@ -2,9 +2,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
+import seaborn as sns
+
 from typing import List, Dict, Callable, Tuple
 from wordcloud import WordCloud
 
+from research.stats import count_time_of_tweets
 from utils import paths
 from research import stats, nlp
 from utils.tweet_utils import is_testimony
@@ -14,18 +17,42 @@ def create_plot_file_name(file_name: str):
     return os.path.join(paths.VISUALS_DIR, file_name)
 
 
-def pie_chart_from_count_dict(count_dict: Dict, save_path: str, title: str = None):
+def pie_chart_from_count_dict(count_dict: Dict, figure_name: str, title: str = None):
+    """
+    Plot and saves a pie chart from a counting dict mapping label -> frequency
+
+    Args:
+        count_dict: Dict of counted values
+        figure_name: Name to give the figure for saving
+        title: optional title to give to the figure
+
+    Returns:
+        None, save to file
+    """
     lists = count_dict.items()
     x, y = zip(*lists)
     fig, ax = plt.subplots(figsize=(10, 5))
     fig.suptitle(title)
-    ax.pie(y, labels=x, autopct='%1.1f%%', labeldistance=None, startangle=90)
+    ax.pie(y, labels=x,
+           autopct=lambda p: f'{p:.2f}%, {p*sum(y)/100 :.0f}',
+           labeldistance=None, startangle=90)
     ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
     plt.legend(loc='lower left')
-    plt.savefig(save_path)
+    plt.savefig(create_plot_file_name(figure_name))
 
 
-def labeled_pie_chart_from_count_dict(count_dict: Dict, save_path: str, title: str = None):
+def labeled_pie_chart_from_count_dict(count_dict: Dict, figure_name: str, title: str = None):
+    """
+    Plot a pie chart labeled with arrows from a counting dict mapping label -> frequency
+
+    Args:
+        count_dict: Dict of counted values
+        figure_name: Name to give the figure for saving
+        title: optional title to give to the figure
+
+    Returns:
+        None, save to file
+    """
     lists = count_dict.items()
     labels, data = zip(*lists)
     fig, ax = plt.subplots(figsize=(12, 7), subplot_kw=dict(aspect="equal"))
@@ -43,15 +70,35 @@ def labeled_pie_chart_from_count_dict(count_dict: Dict, save_path: str, title: s
         kw["arrowprops"].update({"connectionstyle": connectionstyle})
         ax.annotate(labels[i], xy=(x, y), xytext=(1.35 * np.sign(x), 1.4 * y),
                     horizontalalignment=horizontalalignment, **kw)
-    plt.savefig(save_path)
+    plt.savefig(create_plot_file_name(figure_name))
 
 
 def histogram_from_count_dict(count_dict: Dict, figure_name: str):
+    """
+    Plot a histogram bar plot from a counting dict mapping label -> frequency
+
+    Args:
+        count_dict: Dict of counted values
+        figure_name: Name to give the figure for saving
+
+    Returns:
+        None, save to file
+    """
     plt.bar(list(count_dict.keys()), count_dict.values())
-    plt.savefig(figure_name)
+    plt.savefig(create_plot_file_name(figure_name))
 
 
 def word_cloud_from_tokenized_text(text: str, figure_name: str):
+    """
+    Creates a wordcloud from raw text
+
+    Args:
+        text: raw text
+        figure_name: name of figure to save
+
+    Returns:
+        None, save to file
+    """
     plt.rcParams["font.family"] = "Noto Sans CJK JP"
     wordcloud = WordCloud(
         font_path=paths.JAPANESE_FONT_PATH,
@@ -62,7 +109,7 @@ def word_cloud_from_tokenized_text(text: str, figure_name: str):
     plt.figure(figsize=(20, 10))
     plt.imshow(wordcloud, interpolation="bilinear")
     plt.axis("off")
-    plt.savefig(figure_name)
+    plt.savefig(create_plot_file_name(figure_name))
 
 
 def days_histogram_from_day_dict(month_dict: Dict, figure_name: str, every_nth: int = 15):
@@ -75,7 +122,7 @@ def days_histogram_from_day_dict(month_dict: Dict, figure_name: str, every_nth: 
     for n, label in enumerate(ax.xaxis.get_ticklabels()):
         if n % every_nth != 0:
             label.set_visible(False)
-    plt.savefig(figure_name)
+    plt.savefig(create_plot_file_name(figure_name))
 
 
 def scatter_from_count_dict(count_dict: Dict, x_label: str, y_label: str, figure_name: str):
@@ -85,7 +132,7 @@ def scatter_from_count_dict(count_dict: Dict, x_label: str, y_label: str, figure
     ax.scatter(x, y, s=5)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
-    plt.savefig(figure_name)
+    plt.savefig(create_plot_file_name(figure_name))
 
 
 def plot_labels(data_path: str, save_path: str):
@@ -111,7 +158,7 @@ def plot_days_counts(data_path: str, figure_name: str, filter_function: Callable
     month_dict = stats.count_corpus_per_day(
         data_path,
         (2017, 10, 1),
-        (2017, 11, 1),
+        (2019, 11, 1),
         filter_function)
     days_histogram_from_day_dict(month_dict, figure_name, every_nth)
 
@@ -134,7 +181,7 @@ def plot_days_count_testimonies(data_path: str, figure_name: str, every_nth: int
         if n % every_nth != 0:
             label.set_visible(False)
     plt.legend(loc='upper left')
-    plt.savefig(figure_name)
+    plt.savefig(create_plot_file_name(figure_name))
 
 
 def plot_hashtag_per_day_count(data_path: str, hashtag: str, figure_name: str):
@@ -187,13 +234,21 @@ def plot_hashtags_per_month_count(data_path: str, hashtags: List[str], figure_na
     plt.xticks(rotation=45)
     plt.legend(loc='upper right')
     plt.savefig(create_plot_file_name(figure_name))
+
+
+def plot_tweet_per_hour_and_weekday_heatmap(data_path: str, figure_name: str):
+    hour_week_df = count_time_of_tweets(data_path)
+    fig, ax = plt.subplots()
+    sns.heatmap(hour_week_df)
+    ax.set_frame_on(False)  # remove all spines
+    plt.savefig(create_plot_file_name(figure_name))
     
     
 def plot_languages(data_path: str, figure_name: str):
     lang_dict = stats.count_languages(data_path)
     lang_dict.pop("ja")
     plt.bar(list(lang_dict.keys()), lang_dict.values())
-    plt.savefig(figure_name)
+    plt.savefig(create_plot_file_name(figure_name))
 
 
 def plot_tweet_counts_per_users(data_path: str, figure_name: str):
@@ -221,7 +276,7 @@ def plot_all_public_metrics(data_path: str, figure_name: str, filter_function: C
     plt.legend(loc='upper right')
     plt.xlabel("Metric count")
     plt.ylabel("Number of tweets")
-    plt.savefig(figure_name)
+    plt.savefig(create_plot_file_name(figure_name))
 
 
 def plot_gender_counts(data_path: str, figure_name: str, filter_function: Callable = None):
@@ -246,6 +301,12 @@ def plot_annotation_texts(data_path: str, figure_name: str):
     pie_chart_from_count_dict(annotation_texts_count, figure_name)
 
 
+def plot_tweet_types(data_path: str, figure_name: str):
+    plt.rcParams["font.family"] = "Noto Sans CJK JP"
+    type_counts = stats.count_type_frequency(data_path)
+    pie_chart_from_count_dict(type_counts, figure_name)
+
+
 def plot_hour_of_tweet(data_path: str, figure_name: str):
     total_hour_tweeted_count = stats.count_publication_time(data_path)
     testimony_hour_tweeted_count = stats.count_publication_time(data_path, is_testimony)
@@ -260,7 +321,7 @@ def plot_hour_of_tweet(data_path: str, figure_name: str):
     testimony_line.set_label('Testimonies')
     plt.fill_between(x_testimony, y_testimony)
     plt.legend(loc='upper left')
-    plt.savefig(figure_name)
+    plt.savefig(create_plot_file_name(figure_name))
 
 
 def plot_analysis_pie_charts(
@@ -272,77 +333,12 @@ def plot_analysis_pie_charts(
     for variable_name, variable_data in variables_dict.items():
         pie_chart_from_count_dict(
             count_dict=variable_data.get("count_dict"),
-            save_path=os.path.join(paths.VISUALS_DIR, f"{variable_name}_pie_chart.png"),
+            figure_name=os.path.join(paths.VISUALS_DIR, f"{variable_name}_pie_chart.png"),
             title=variable_data.get("title"))
 
 
-def plot_all_metrics():
-    plot_days_count_testimonies(paths.FINAL_CORPUS_DIR, create_plot_file_name("comparison_tweets_per_day_count.png"), 5)
-    plot_days_counts(paths.FINAL_CORPUS_DIR, create_plot_file_name("testimony_tweets_per_day_count.png"), is_testimony, 5)
-    plot_days_counts(paths.ANNOTATED_CORPUS_DIR, create_plot_file_name("testimony_tweets_per_day_count.png"))
-    plot_hashtags_per_day_count(
-        data_path=paths.FINAL_CORPUS_DIR,
-        hashtags=[
-            "#timesup",
-            "#wetoo",
-            "#パワハラ",
-            "#セクハラ",
-            "#metoo",
-            "#ｍｅｔｏｏ"
-        ],
-        figure_name=create_plot_file_name("total_hashtags_per_day.png"),
-        start_date=(2017, 10, 1),
-        end_date=(2017, 11, 1),
-        every_nth=5)
-    plot_hashtags_per_day_count(
-        data_path=paths.FINAL_CORPUS_DIR,
-        hashtags=[
-            "#timesup",
-            "#wetoo",
-            "#パワハラ",
-            "#セクハラ",
-            "#metoo",
-            "#ｍｅｔｏｏ"
-        ],
-        figure_name=create_plot_file_name("testimony_hashtags_per_day.png"),
-        start_date=(2017, 10, 1),
-        end_date=(2017, 11, 1),
-        every_nth=5,
-        filter_function=is_testimony)
-    plot_hour_of_tweet(paths.FINAL_CORPUS_DIR, create_plot_file_name("comparison_hour_tweeted.png"))
-    plot_gender_counts(paths.FINAL_CORPUS_DIR, create_plot_file_name("total_gender_counts.png"))
-    plot_gender_counts(paths.FINAL_CORPUS_DIR, create_plot_file_name("testimony_gender_counts.png"), is_testimony)
-    plot_all_public_metrics(paths.FINAL_CORPUS_DIR, create_plot_file_name("total_public_metrics.png"))
-    plot_all_public_metrics(paths.FINAL_CORPUS_DIR, create_plot_file_name("testimony_public_metrics.png"), is_testimony)
-    plot_hashtags_per_day_count(
-        data_path=paths.CLEAN_DATA_DIR,
-        hashtags=[
-            "#timesup",
-            "#wetoo",
-            "#パワハラ",
-            "#セクハラ",
-            "#metoo",
-            "#ｍｅｔｏｏ"
-        ],
-        figure_name=create_plot_file_name("full_data_hashtags_per_day.png"),
-        start_date=(2017, 10, 1),
-        end_date=(2018, 11, 1))
-    plot_month_counts(paths.CLEAN_DATA_DIR, create_plot_file_name("full_data_tweet_count_per_month.png"))
-    plot_quotes_in_corpus(paths.FINAL_CORPUS_DIR, create_plot_file_name("testimony_type_of_quotes.png"), is_testimony)
-    plot_word_cloud(paths.FINAL_CORPUS_DIR, create_plot_file_name("testimony_word_cloud.png"), is_testimony)
-    plot_annotation_texts(paths.FINAL_CORPUS_DIR, create_plot_file_name("testimony_lexical_field_emotion.png"))
-
-
 if __name__ == "__main__":
-    plot_hashtags_per_day_count(
-        data_path=paths.RAW_DATA_DIR,
-        hashtags=[
-            "#metoo",
-            "#wetoojapan",
-            "#私は黙らない",
-            "#ｍｅｔｏｏ",
-            "#セクハラ",
-            "#wetoo"
-        ],
-        figure_name="hashtag distribution per day on raw corpus"
+    plot_tweet_per_hour_and_weekday_heatmap(
+        paths.JAPAN_2017_2019,
+        "Tweet activity intensity per Hour and Weekday on the 2017-2019 Corpus"
     )

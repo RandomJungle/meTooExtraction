@@ -1,12 +1,22 @@
 import csv
+import datetime
 import json
+import logging
+import os
 import re
+import traceback
 
+from typing import List, Callable
+
+import pandas
 import pandas as pd
+import pytz
+from tqdm import tqdm
 
-from utils import paths
-from utils.file_utils import read_corpus_list, read_corpus_generator, read_jsonl_generator
-from utils.tweet_utils import is_conspiracy_tweet
+from utils import paths, converters
+from utils.file_utils import read_corpus_list, read_corpus_generator, read_jsonl_generator, get_char_encoding_of_file, \
+    read_jsonl_list
+from utils.tweet_utils import is_conspiracy_tweet, get_timestamp_of_tweet, convert_date_to_timestamp
 
 
 def find_real_id_in_dataframe(stupid_id: str, user_data: pd.DataFrame):
@@ -249,8 +259,100 @@ def convert_jsonl_corpus_to_csv(input_dir_path, output_csv_path):
             ])
 
 
+def is_most_ancient_data(entry):
+    low_timestamp = datetime.datetime(
+        year=2017, month=10, day=1, hour=0, minute=0, second=0, tzinfo=datetime.timezone.utc)
+    return entry['created_at'] < low_timestamp
+
+
+def is_middle_data(entry):
+    low_timestamp = datetime.datetime(
+        year=2017, month=10, day=1, hour=0, minute=0, second=0, tzinfo=datetime.timezone.utc)
+    high_timestamp = datetime.datetime(
+        year=2019, month=10, day=31, hour=23, minute=59, second=59, tzinfo=datetime.timezone.utc)
+    return (entry['created_at'] > low_timestamp) & (entry['created_at'] < high_timestamp)
+
+
+def is_most_recent_data(entry):
+    high_timestamp = datetime.datetime(
+        year=2019, month=10, day=31, hour=23, minute=59, second=59, tzinfo=datetime.timezone.utc)
+    return entry['created_at'] > high_timestamp
+
+
+def divide_corpus_into_3_periods(tweet_dir_path: str, corpora_root: str):
+    # removing the old dataset from here because it is huge and take forever
+    """
+    make_corpora_from_tweet_dir(
+        tweet_dir_path=tweet_dir_path,
+        final_corpus_root=os.path.join(corpora_root, "JAPAN_2016-sept-2017"),
+        filter_function=is_most_ancient_data
+    )
+    """
+    make_corpora_from_tweet_dir(
+        tweet_dir_path=tweet_dir_path,
+        final_corpus_root=os.path.join(corpora_root, "JAPAN_oct-2017-oct-2019"),
+        filter_function=is_middle_data
+    )
+    """
+    make_corpora_from_tweet_dir(
+        tweet_dir_path=tweet_dir_path,
+        final_corpus_root=os.path.join(corpora_root, "JAPAN_nov-2019-2022"),
+        filter_function=is_most_recent_data
+    )
+    """
+
+
+def make_corpora_from_tweet_dir(tweet_dir_path: str, final_corpus_root: str, filter_function: Callable):
+    dataframe = pandas.DataFrame
+    for root, dirs, files in os.walk(tweet_dir_path):
+        logging.warning(msg=f"PROCESSING ROOT DIR {root}")
+        for filename in tqdm(files):
+            if filename.endswith(".jsonl"):
+                file_size = os.path.getsize(os.path.join(root, filename))/(1 << 30)
+                if file_size > 1.6:
+                    pass
+                    logging.error(msg=f"NOT PROCESSING FILE {filename} BECAUSE OF FILE SIZE {file_size}")
+                else:
+                    logging.warning(msg=f"Processing file ---> {filename}")
+                    file_dataframe = pandas.read_json(os.path.join(root, filename), orient="records", lines=True)
+                    filtered_tweets = file_dataframe[file_dataframe.apply(lambda x: filter_function(x), axis=1)]
+                    del file_dataframe
+                    if dataframe.empty:
+                        dataframe = filtered_tweets
+                    else:
+                        dataframe = pd.concat([dataframe, filtered_tweets])
+                    logging.warning(f"Number of rows in Dataframe : {dataframe.shape[0]}")
+                    dataframe = dataframe.drop_duplicates(subset='id')
+                    logging.warning(f"Number of rows in Dataframe after filtering : {dataframe.shape[0]}")
+    if not os.path.exists(final_corpus_root):
+        try:
+            os.makedirs(final_corpus_root)
+        except OSError as error:
+            logging.error(error)
+    write_dataframe_into_month_jsonl(dataframe, final_corpus_root)
+
+
+def write_dataframe_into_month_jsonl(dataframe: pandas.DataFrame, output_root_dir: str):
+    for year in range(2016, 2024):
+        year_dataframe = dataframe[dataframe.apply(
+            lambda x: x['created_at'].year == year, axis=1)]
+        if not year_dataframe.empty:
+            for month in range(1, 13):
+                month_dataframe = year_dataframe[year_dataframe.apply(
+                    lambda x: x['created_at'].month == month, axis=1)]
+                month_str = converters.month_int_to_str[month]
+                file_name = f"{year}-{month:02d}-{month_str}.jsonl"
+                if not month_dataframe.empty:
+                    month_dataframe.to_json(
+                        os.path.join(output_root_dir, file_name),
+                        orient='records',
+                        date_format='iso',
+                        lines=True
+                    )
+
+
 if __name__ == "__main__":
-    convert_jsonl_user_info_to_csv(
-        paths.USER_INFO_JSONL,
-        paths.USER_INFO_CSV
+    divide_corpus_into_3_periods(
+        paths.JAPAN_RAW_ROOT,
+        paths.CORPORA_ROOT
     )
