@@ -11,8 +11,14 @@ def get_day_of_tweet(tweet: Dict):
 def get_hour_of_tweet(tweet: Dict):
     date_string = tweet.get("created_at")
     date = datetime.strptime(date_string, "%Y-%m-%dT%H:%M:%S.%fZ")
-    hour = str(date.astimezone(pytz.timezone("Asia/Tokyo")).time())[0:3]
+    hour = date.astimezone(pytz.timezone("Asia/Tokyo")).time().hour
     return hour
+
+
+def get_weekday_of_tweet(tweet: Dict):
+    date_string = tweet.get("created_at")
+    date = datetime.strptime(date_string, "%Y-%m-%dT%H:%M:%S.%fZ")
+    return date.isoweekday()
 
 
 def get_language_of_tweet(tweet: Dict):
@@ -21,6 +27,10 @@ def get_language_of_tweet(tweet: Dict):
 
 def get_timestamp_of_tweet(tweet: Dict):
     date_string = tweet.get("created_at")
+    return convert_date_to_timestamp(date_string)
+
+
+def convert_date_to_timestamp(date_string: str):
     date = datetime.strptime(date_string, "%Y-%m-%dT%H:%M:%S.%fZ")
     date = date.replace(tzinfo=timezone.utc)
     return date.timestamp()
@@ -50,3 +60,16 @@ def is_filtered_tweet(tweet: Dict, ids_list: List):
         return False
     else:
         return True
+
+
+def is_retweet(tweet: Dict):
+    if isinstance(tweet['referenced_tweets'], list):
+        return any(['retweeted' in references.values()
+                    for references in tweet.get('referenced_tweets', [])])
+    return False
+
+
+def is_not_retweet(tweet: Dict):
+    if is_retweet(tweet):
+        return False
+    return True

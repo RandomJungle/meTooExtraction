@@ -25,3 +25,18 @@ file_to_month = {
     '2019-09-01---2019-10-01.jsonl': "Septembre 2019",
     '2019-10-01---2019-11-01.jsonl': "Octobre 2019"
 }
+
+month_int_to_str = {
+    1: "january",
+    2: "february",
+    3: "marsh",
+    4: "april",
+    5: "may",
+    6: "june",
+    7: "july",
+    8: "august",
+    9: "september",
+    10: "october",
+    11: "november",
+    12: "december"
+}
