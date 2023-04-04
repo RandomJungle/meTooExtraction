@@ -11,7 +11,8 @@ import utils.paths as paths
 
 from utils.converters import file_to_month
 from utils.file_utils import read_corpus_generator, read_jsonl_generator, read_variable_dict, read_analysis_csv
-from utils.tweet_utils import get_day_of_tweet, get_language_of_tweet, get_hour_of_tweet, get_weekday_of_tweet
+from utils.tweet_utils import get_day_of_tweet, get_language_of_tweet, get_hour_of_tweet, get_weekday_of_tweet, \
+    is_retweet
 
 
 def build_days_dict(start_date, end_date):
@@ -36,19 +37,21 @@ def build_days_dict(start_date, end_date):
     return dates
 
 
-def count_corpus(data_path: str):
+def count_corpus(data_path: str, filter_function=None):
     """
     Count the number of lines in all files in a listed directory
 
     Args:
         data_path: path to dir where counting will occur
+        filter_function: Optional filter to remove some tweets
 
     Returns:
         Total number of lines for all files in dir
     """
     total = 0
-    for file_name in os.listdir(data_path):
-        total += sum(1 for l in open(os.path.join(data_path, file_name)))
+    for tweet in read_corpus_generator(data_path):
+        if (filter_function and filter_function(tweet)) or not filter_function:
+            total += 1
     return total
 
 
@@ -72,7 +75,7 @@ def count_corpus_per_month(data_path: str):
 def count_corpus_per_day(
         data_path: str,
         start_date=(2017, 10, 1),
-        end_date=(2018, 10, 31),
+        end_date=(2019, 12, 31),
         filter_function=None):
     """
     Count number of tweets per day in a corpus and return them as a dict
@@ -89,12 +92,22 @@ def count_corpus_per_day(
     days = build_days_dict(start_date, end_date)
     for tweet in read_corpus_generator(data_path):
         date = get_day_of_tweet(tweet)
-        if (filter_function and filter_function(tweet)) or not filter_function:
-            days.update({date: days.get(date, 0) + 1})
+        if date in days.keys():
+            if (filter_function and filter_function(tweet)) or not filter_function:
+                days.update({date: days.get(date, 0) + 1})
     return days
 
 
 def count_time_of_tweets(data_path: str):
+    """
+    Count Matrix of hour of tweets x weekday
+
+    Args:
+        data_path: path to dir of tweets
+
+    Returns:
+        Dataframe pandas of hour of tweets x weekday
+    """
     hours_per_weekday = {weekday: {hour: 0 for hour in range(0, 24)}
                          for weekday in range(1, 8)}
     for tweet in read_corpus_generator(data_path):
@@ -166,7 +179,7 @@ def count_hashtag_per_day(
         data_path: str,
         hashtag: str,
         start_date: Tuple = (2017, 10, 1),
-        end_date: Tuple = (2018, 10, 31),
+        end_date: Tuple = (2019, 12, 31),
         filter_function: Callable = None):
     """
     Count one hashtag frequencies per day
@@ -517,4 +530,6 @@ def count_type_frequency(data_path: str):
 
 
 if __name__ == "__main__":
-    print(count_time_of_tweets(paths.JAPAN_2017_2019))
+    print(count_corpus(
+        data_path=paths.JAPAN_2017_2019_CLEAN,
+    ))

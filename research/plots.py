@@ -5,12 +5,14 @@ import os
 import seaborn as sns
 
 from typing import List, Dict, Callable, Tuple
+
+from tqdm import tqdm
 from wordcloud import WordCloud
 
 from research.stats import count_time_of_tweets
 from utils import paths
 from research import stats, nlp
-from utils.tweet_utils import is_testimony
+from utils.tweet_utils import is_testimony, is_not_retweet
 
 
 def create_plot_file_name(file_name: str):
@@ -154,11 +156,17 @@ def plot_month_counts(data_path: str, figure_name: str):
     plt.savefig(create_plot_file_name(figure_name))
     
     
-def plot_days_counts(data_path: str, figure_name: str, filter_function: Callable = None, every_nth: int = 15):
+def plot_days_counts(
+        data_path: str,
+        figure_name: str,
+        filter_function: Callable = None,
+        start_date: Tuple = (2017, 10, 1),
+        end_date: Tuple = (2019, 11, 1),
+        every_nth: int = 15):
     month_dict = stats.count_corpus_per_day(
         data_path,
-        (2017, 10, 1),
-        (2019, 11, 1),
+        start_date,
+        end_date,
         filter_function)
     days_histogram_from_day_dict(month_dict, figure_name, every_nth)
 
@@ -338,7 +346,38 @@ def plot_analysis_pie_charts(
 
 
 if __name__ == "__main__":
-    plot_tweet_per_hour_and_weekday_heatmap(
-        paths.JAPAN_2017_2019,
-        "Tweet activity intensity per Hour and Weekday on the 2017-2019 Corpus"
-    )
+    dates_list = [
+        ((2017, 10, 1), (2017, 11, 1)),
+        ((2017, 11, 1), (2017, 12, 1)),
+        ((2017, 12, 1), (2018, 1, 1)),
+        ((2018, 1, 1), (2018, 2, 1)),
+        ((2018, 2, 1), (2018, 3, 1)),
+        ((2018, 3, 1), (2018, 4, 1)),
+        ((2018, 4, 1), (2018, 5, 1)),
+        ((2018, 5, 1), (2018, 6, 1)),
+        ((2018, 6, 1), (2018, 7, 1)),
+        ((2018, 7, 1), (2018, 8, 1)),
+        ((2018, 8, 1), (2018, 9, 1)),
+        ((2018, 9, 1), (2018, 10, 1)),
+        ((2018, 10, 1), (2018, 11, 1)),
+        ((2018, 11, 1), (2018, 12, 1)),
+        ((2018, 12, 1), (2019, 1, 1)),
+        ((2019, 1, 1), (2019, 2, 1)),
+        ((2019, 2, 1), (2019, 3, 1)),
+        ((2019, 3, 1), (2019, 4, 1)),
+        ((2019, 4, 1), (2019, 5, 1)),
+        ((2019, 5, 1), (2019, 6, 1)),
+        ((2019, 6, 1), (2019, 7, 1)),
+        ((2019, 7, 1), (2019, 8, 1)),
+        ((2019, 8, 1), (2019, 9, 1)),
+        ((2019, 9, 1), (2019, 10, 1)),
+        ((2019, 10, 1), (2019, 11, 1)),
+    ]
+    for dates in tqdm(dates_list):
+        plot_days_counts(
+            data_path=paths.JAPAN_2017_2019_CLEAN,
+            figure_name=f"tweet count per days from {dates[0]} to {dates[1]}",
+            filter_function=is_not_retweet,
+            start_date=dates[0],
+            end_date=dates[1],
+            every_nth=2)

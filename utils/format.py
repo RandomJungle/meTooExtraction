@@ -4,19 +4,22 @@ import json
 import logging
 import os
 import re
-import traceback
 
-from typing import List, Callable
+from typing import Callable, Tuple
 
 import pandas
 import pandas as pd
-import pytz
 from tqdm import tqdm
 
 from utils import paths, converters
-from utils.file_utils import read_corpus_list, read_corpus_generator, read_jsonl_generator, get_char_encoding_of_file, \
-    read_jsonl_list
-from utils.tweet_utils import is_conspiracy_tweet, get_timestamp_of_tweet, convert_date_to_timestamp
+from utils.file_utils import (
+    read_corpus_list,
+    read_corpus_generator,
+    read_jsonl_generator,
+    write_tweets_to_jsonl,
+    select_tweets_from_ids_in_jsonl
+)
+from utils.tweet_utils import is_conspiracy_tweet, is_retweet
 
 
 def find_real_id_in_dataframe(stupid_id: str, user_data: pd.DataFrame):
@@ -225,38 +228,46 @@ def convert_jsonl_user_info_to_csv(input_jsonl_path, output_csv_path):
             ])
 
 
-def convert_jsonl_corpus_to_csv(input_dir_path, output_csv_path):
-    with open(output_csv_path, 'w') as output_csv_file:
-        csv_writer = csv.writer(output_csv_file, delimiter=";", quotechar='"')
-        csv_writer.writerow([
-            "tweet id",
-            "auteur id",
-            "texte en japonais",
-            "texte en anglais",
-            "texte en français",
-            "label",
-            "date de création",
-            "nombre de retweets",
-            "nombre de reply",
-            "nombre de likes",
-            "nombre de quotes",
-            "genre exprimé"
-        ])
-        for tweet in read_corpus_generator(input_dir_path):
-            csv_writer.writerow([
-                tweet.get('id'),
-                tweet.get('author_id'),
-                tweet.get('text'),
-                tweet.get('en_text'),
-                tweet.get('fr_text'),
-                tweet.get('label'),
-                tweet.get('created_at'),
-                tweet.get('public_metrics').get('retweet_count'),
-                tweet.get('public_metrics').get('reply_count'),
-                tweet.get('public_metrics').get('like_count'),
-                tweet.get('public_metrics').get('quote_count'),
-                tweet.get('labels').get('genders')
-            ])
+def convert_jsonl_corpus_to_csv(
+        input_dir_path,
+        output_csv_path,
+        filter_function=None):
+    for file_name in os.listdir(input_dir_path):
+        if file_name.endswith(".jsonl"):
+            new_name = os.path.join(
+                output_csv_path,
+                re.sub(r"\.jsonl$", ".csv", file_name))
+            with open(new_name, 'w+') as csv_file:
+                csv_writer = csv.writer(csv_file, delimiter=";", quotechar='"')
+                csv_writer.writerow([
+                    "tweet id",
+                    "auteur id",
+                    "texte en japonais",
+                    "texte en anglais",
+                    "texte en français",
+                    "label",
+                    "date de création",
+                    "nombre de retweets",
+                    "nombre de reply",
+                    "nombre de likes",
+                    "nombre de quotes",
+                ])
+                for tweet in read_jsonl_generator(
+                        os.path.join(input_dir_path, file_name)):
+                    if (filter_function and filter_function(tweet)) or not filter_function:
+                        csv_writer.writerow([
+                            tweet.get('id'),
+                            tweet.get('author_id'),
+                            tweet.get('text'),
+                            tweet.get('en_text'),
+                            tweet.get('fr_text'),
+                            tweet.get('label'),
+                            tweet.get('created_at'),
+                            tweet.get('public_metrics').get('retweet_count'),
+                            tweet.get('public_metrics').get('reply_count'),
+                            tweet.get('public_metrics').get('like_count'),
+                            tweet.get('public_metrics').get('quote_count'),
+                        ])
 
 
 def is_most_ancient_data(entry):
@@ -351,8 +362,37 @@ def write_dataframe_into_month_jsonl(dataframe: pandas.DataFrame, output_root_di
                     )
 
 
+def format_dataset_for_network_study(
+        tweet_dir_path: str,
+        output_dir_path: str,
+        threshold: int = 20):
+    if output_dir_path == tweet_dir_path:
+        raise FileExistsError
+    for file in tqdm(os.listdir(tweet_dir_path)):
+        input_jsonl_path = os.path.join(tweet_dir_path, file)
+        month_tweets = []
+        for metric_key in ["reply_count", "retweet_count", "quote_count", "like_count"]:
+            count_dict = {}
+            for tweet in read_jsonl_generator(input_jsonl_path):
+                if not is_retweet(tweet):
+                    metric_count = tweet.get('public_metrics').get(metric_key)
+                    if metric_count:
+                        count_dict.update({
+                            metric_count: count_dict.get(metric_count, []) + [tweet.get('id')]})
+            count_dict = {key: value for key, value in
+                          sorted(count_dict.items(), key=lambda item: item[0], reverse=True)}
+            sub_dict = dict(list(count_dict.items())[:threshold])
+            retrieved_tweets = select_tweets_from_ids_in_jsonl(
+                jsonl_path=input_jsonl_path,
+                tweet_ids=[item for sublist in sub_dict.values() for item in sublist])
+            for tweet in retrieved_tweets:
+                tweet.update({"source_inclusion": metric_key})
+            month_tweets.extend(retrieved_tweets[0:20])
+        write_tweets_to_jsonl(os.path.join(output_dir_path, file), month_tweets)
+
+
 if __name__ == "__main__":
-    divide_corpus_into_3_periods(
-        paths.JAPAN_RAW_ROOT,
-        paths.CORPORA_ROOT
+    format_dataset_for_network_study(
+        tweet_dir_path="/home/juliette/data/meToo_data/corpora/JAPAN_oct-2017-oct-2019/clean",
+        output_dir_path="/home/juliette/data/meToo_data/corpora/JAPAN_oct-2017-oct-2019/network",
     )

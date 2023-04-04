@@ -5,6 +5,8 @@ import chardet
 import json
 import os
 
+from tqdm import tqdm
+
 from utils import paths
 
 
@@ -37,9 +39,17 @@ def read_corpus_list(data_path: str):
     return tweets
 
 
-def select_tweets_from_ids(data_path: str, tweet_ids: List[int]):
+def select_tweets_from_ids_in_corpus(data_path: str, tweet_ids: List[int]):
     tweets = []
     for tweet in read_corpus_generator(data_path):
+        if tweet.get('id') in tweet_ids:
+            tweets.append(tweet)
+    return tweets
+
+
+def select_tweets_from_ids_in_jsonl(jsonl_path: str, tweet_ids: List[int]):
+    tweets = []
+    for tweet in read_jsonl_generator(jsonl_path):
         if tweet.get('id') in tweet_ids:
             tweets.append(tweet)
     return tweets
@@ -102,3 +112,18 @@ def read_users_csv(user_csv_path: str):
         csv_reader = csv.DictReader(user_csv_file, delimiter=";")
         csv_rows.extend([row for row in csv_reader])
     return csv_rows
+
+
+def write_tweets_to_jsonl(output_path: str, tweets: List[Dict]):
+    with open(output_path, 'w') as output_file:
+        for tweet in tqdm(tweets):
+            output_file.write(json.dumps(tweet) + "\n")
+
+
+def write_tweets_to_csv(output_path: str, tweets: List[Dict]):
+    with open(output_path, 'w+') as csv_file:
+        tweet_keys = (tweets[0].keys())
+        writer = csv.DictWriter(csv_file, fieldnames=tweet_keys)
+        writer.writeheader()
+        for tweet in tweets:
+            writer.writerow(tweet)

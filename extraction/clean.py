@@ -65,21 +65,18 @@ def full_cleaning_pipeline(input_dir: str,
         regexes = bots_json.get('bots_regexes')
     for file_name in os.listdir(input_dir):
         if file_name.endswith('.jsonl'):
-            file_ids = []
             with open(os.path.join(input_dir, file_name), 'r') as input_file, \
                     open(os.path.join(output_dir, file_name), 'w') as output_file:
                 for line in tqdm(input_file.readlines()):
                     tweet = json.loads(line)
-                    tweet_id = tweet.get('id')
                     tweet_lang = tweet.get('lang')
                     tweet_text = tweet.get('text')
                     author_id = tweet.get('author_id')
-                    if (tweet_id not in file_ids) \
-                            and (not language_filter or tweet_lang == language_filter) \
-                            and not any([re.match(regex, tweet_text) for regex in regexes])\
+                    if (not language_filter or tweet_lang == language_filter) \
+                            and not any([re.match(regex, tweet_text, flags=re.I) for regex in regexes])\
+                            and not any([regex in tweet_text.lower() for regex in regexes])\
                             and author_id not in bots_user_ids:
                         output_file.write(line)
-                        file_ids.append(tweet_id)
                     else:
                         counter += 1
     print(f"Removed {counter} tweets in total")
@@ -88,8 +85,7 @@ def full_cleaning_pipeline(input_dir: str,
 if __name__ == "__main__":
     
     full_cleaning_pipeline(
-        paths.TRANSLATED_DATA_DIR,
-        paths.CLEAN_DATA_DIR,
-        paths.BOTS_JSON_PATH,
-        language_filter="ja"
+        paths.JAPAN_2017_2019_RAW,
+        paths.JAPAN_2017_2019_CLEAN,
+        "/home/juliette/projects/meTooExtraction/info/analysis/bots_content.json",
     )
