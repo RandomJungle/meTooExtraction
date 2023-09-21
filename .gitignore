@@ -1,6 +1,7 @@
 # twitter credentials
 .twitter_keys.yaml
 utils/paths.py
+utils/deepl_auth.py
 
 data/
 

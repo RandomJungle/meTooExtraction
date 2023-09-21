@@ -5,7 +5,7 @@ from searchtweets import load_credentials
 from typing import List
 
 from utils import paths
-from utils.file_utils import read_corpus_generator, read_jsonl_generator, convert_jsonl_user_info_to_csv
+from utils.file_utils import read_corpus_generator
 
 
 def chunks_generator(lst, n):
@@ -80,13 +80,11 @@ def query_users_info(data_path: str, output_jsonl_path: str, output_csv_path: st
     with open(output_jsonl_path, 'a+') as output_file:
         for json_user_info in jsons:
             output_file.write(json.dumps(json_user_info, sort_keys=True) + "\n")
-    convert_jsonl_user_info_to_csv(output_jsonl_path, output_csv_path)
 
 
 if __name__ == "__main__":
-
     query_users_info(
-        data_path=paths.FINAL_CORPUS_DIR,
-        output_jsonl_path=paths.USER_INFO_JSONL,
-        output_csv_path=paths.USER_INFO_CSV
+        data_path=paths.JAPAN_PUBLIC_METRIC_JSONL,
+        output_jsonl_path="/home/juliette/data/meToo_data/japan/public_metric_user_info.jsonl",
+        output_csv_path="/home/juliette/data/meToo_data/japan/public_metric_user_info.csv"
     )

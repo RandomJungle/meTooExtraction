@@ -63,7 +63,7 @@ def is_filtered_tweet(tweet: Dict, ids_list: List):
 
 
 def is_retweet(tweet: Dict):
-    if isinstance(tweet['referenced_tweets'], list):
+    if isinstance(tweet.get('referenced_tweets', 0), list):
         return any(['retweeted' in references.values()
                     for references in tweet.get('referenced_tweets', [])])
     return False

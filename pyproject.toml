@@ -15,6 +15,7 @@ tqdm = "^4.64.1"
 matplotlib = "^3.6.2"
 wordcloud = "^1.8.2.2"
 seaborn = "^0.12.2"
+deepl = "^1.14.0"
 
 
 [build-system]

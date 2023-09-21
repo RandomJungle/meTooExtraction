@@ -1,3 +1,5 @@
+import logging
+import os
 from collections import Counter
 
 from tqdm import tqdm
@@ -5,7 +7,8 @@ from tqdm import tqdm
 import utils.paths as paths
 from research.stats import count_tweet_per_user, count_all_hashtags
 
-from utils.file_utils import read_corpus_generator, select_tweets_from_ids_in_corpus, write_tweets_to_csv
+from utils.file_utils import read_corpus_generator, select_tweets_from_ids_in_corpus, write_tweets_to_csv, \
+    write_tweets_to_jsonl
 from utils.tweet_utils import get_language_of_tweet, is_retweet
 
 
@@ -116,6 +119,8 @@ def find_tweets_with_most_metric(data_path: str, metric_key: str, threshold: int
     for tweet in tqdm(read_corpus_generator(data_path)):
         if not is_retweet(tweet):
             metric_count = tweet.get('public_metrics').get(metric_key)
+            if metric_count is None:
+                raise ValueError(f"{metric_count} not found in tweet")
             count_dict.update({
                 metric_count: count_dict.get(metric_count, []) + [tweet.get('id')]})
     count_dict = {key: value for key, value in
@@ -127,9 +132,28 @@ def find_tweets_with_most_metric(data_path: str, metric_key: str, threshold: int
 
 
 if __name__ == "__main__":
-    tweets = find_tweets_with_most_metric(
-        paths.JAPAN_2017_2019_CLEAN,
-        metric_key="quote_count")
-    write_tweets_to_csv(
-        output_path="/home/juliette/projects/meTooExtraction/info/analysis/quote-count_top-20_2017-2019.csv",
-        tweets=tweets)
+    for file_name in os.listdir(paths.JAPAN_2017_2019_RAW):
+        logging.warning(f"processing file {file_name}")
+        tweets = []
+        for metric in ["quote_count", "retweet_count", "reply_count", "like_count"]:
+            metric_tweets = find_tweets_with_most_metric(
+                os.path.join(paths.JAPAN_2017_2019_RAW, file_name),
+                metric_key=metric,
+                threshold=10)
+            metric_tweets = [item for sublist in metric_tweets for item in sublist]
+            logging.warning(f"{len(metric_tweets)} found for {file_name} and metric {metric}")
+            found_tweet_ids = [tweet.get("id") for tweet in tweets]
+            for metric_tweet in metric_tweets:
+                metric_tweet_id = metric_tweet.get('id')
+                if metric_tweet_id not in found_tweet_ids:
+                    metric_tweet.update({"inclusion_metric": [metric]})
+                    tweets.append(metric_tweet)
+                else:
+                    for tweet in tweets:
+                        if tweet.get('id') == metric_tweet_id:
+                            tweet.update({"inclusion_metric": tweet.get("inclusion_metric") + [metric]})
+        write_tweets_to_jsonl(
+            output_path=os.path.join("/home/juliette/data/meToo_data/japan/public_metric_jsonl", file_name),
+            tweets=tweets
+        )
+        logging.warning(f"saved {len(tweets)} tweets to {file_name}")

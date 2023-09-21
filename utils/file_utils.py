@@ -7,15 +7,19 @@ import os
 
 from tqdm import tqdm
 
-from utils import paths
+
+def read_json_file(json_file_path: str):
+    with open(json_file_path, 'r') as json_file:
+        return json.loads(json_file.read())
 
 
 def read_corpus_generator(data_path: str):
-    for file_name in os.listdir(data_path):
-        if file_name.endswith('.jsonl'):
-            with open(os.path.join(data_path, file_name), 'r') as data_file:
-                for entry in data_file.readlines():
-                    yield json.loads(entry)
+    if os.path.isfile(data_path):
+        yield from read_jsonl_generator(data_path)
+    else:
+        for file_name in os.listdir(data_path):
+            if file_name.endswith('.jsonl'):
+                yield from read_jsonl_generator(os.path.join(data_path, file_name))
 
 
 def read_jsonl_generator(file_path: str):
@@ -122,7 +126,7 @@ def write_tweets_to_jsonl(output_path: str, tweets: List[Dict]):
 
 def write_tweets_to_csv(output_path: str, tweets: List[Dict]):
     with open(output_path, 'w+') as csv_file:
-        tweet_keys = (tweets[0].keys())
+        tweet_keys = list(set([item for sublist in tweets for item in sublist.keys()]))
         writer = csv.DictWriter(csv_file, fieldnames=tweet_keys)
         writer.writeheader()
         for tweet in tweets:
