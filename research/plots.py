@@ -6,17 +6,21 @@ from typing import List, Dict, Callable, Tuple
 import pandas as pd
 import plotly.express as px
 import seaborn as sns
+from dotenv import find_dotenv, load_dotenv
 from wordcloud import WordCloud
 
 from research.stats import count_time_of_tweets
-from utils import paths
 from research import stats, nlp
+from utils.df_transform import add_month_column, add_hashtags_column, explode_lowered_hashtags, filter_hashtags_by_count
 from utils.file_utils import read_json_dataframe
 from utils.tweet_utils import is_testimony
 
 
+load_dotenv(find_dotenv())
+
+
 def create_plot_file_name(file_name: str):
-    return os.path.join(paths.VISUALS_DIR, file_name)
+    return os.path.join(os.environ.get('VISUALS_DIR'), file_name)
 
 
 def pie_chart_from_count_dict(count_dict: Dict, figure_name: str, title: str = None):
@@ -103,7 +107,7 @@ def word_cloud_from_tokenized_text(text: str, figure_name: str):
     """
     plt.rcParams["font.family"] = "Noto Sans CJK JP"
     wordcloud = WordCloud(
-        font_path=paths.JAPANESE_FONT_PATH,
+        font_path=os.environ.get('JAPANESE_FONT_PATH'),
         background_color="white",
         max_font_size=200,
         width=800,
@@ -299,7 +303,8 @@ def plot_quotes_in_corpus(data_path: str, figure_name: str, filter_function: Cal
 
 
 def plot_word_cloud(data_path: str, figure_name: str, filter_function: Callable = None):
-    text = nlp.tokenize_all_tweet_texts(data_path, paths.JAPANESE_STOP_WORDS, "text", filter_function)
+    text = nlp.tokenize_all_tweet_texts(
+        data_path, os.environ.get('JAPANESE_STOP_WORDS'), "text", filter_function)
     word_cloud_from_tokenized_text(text, figure_name)
 
 
@@ -315,23 +320,6 @@ def plot_tweet_types(data_path: str, figure_name: str):
     pie_chart_from_count_dict(type_counts, figure_name)
 
 
-def plot_hour_of_tweet(data_path: str, figure_name: str):
-    total_hour_tweeted_count = stats.count_publication_time(data_path)
-    testimony_hour_tweeted_count = stats.count_publication_time(data_path, is_testimony)
-    x_full, y_full = zip(*sorted(total_hour_tweeted_count.items()))
-    x_testimony, y_testimony = zip(*sorted(testimony_hour_tweeted_count.items()))
-    fig, ax = plt.subplots()
-    fig.set_size_inches(10, 8)
-    full_line, = plt.plot(x_full, y_full)
-    full_line.set_label('Entire Corpus')
-    plt.fill_between(x_full, y_full)
-    testimony_line, = plt.plot(x_testimony, y_testimony)
-    testimony_line.set_label('Testimonies')
-    plt.fill_between(x_testimony, y_testimony)
-    plt.legend(loc='upper left')
-    plt.savefig(create_plot_file_name(figure_name))
-
-
 def plot_analysis_pie_charts(
         variable_dict_json_path: str,
         analysis_csv_path: str):
@@ -341,7 +329,7 @@ def plot_analysis_pie_charts(
     for variable_name, variable_data in variables_dict.items():
         pie_chart_from_count_dict(
             count_dict=variable_data.get("count_dict"),
-            figure_name=os.path.join(paths.VISUALS_DIR, f"{variable_name}_pie_chart.png"),
+            figure_name=os.path.join(os.environ.get('VISUALS_DIR'), f"{variable_name}_pie_chart.png"),
             title=variable_data.get("title"))
 
 
@@ -359,32 +347,17 @@ def plot_tweet_count_per_month(
     fig.show()
 
 
-def extract_hashtags_from_row(row) -> List[str]:
-    if isinstance(row, dict):
-        hashtags = row.get('hashtags')
-        if hashtags:
-            return [hashtag.get('tag') for hashtag in hashtags]
-    return []
-
-
 def plot_hashtags_evolution(
         dataframe: pd.DataFrame,
         min_count_threshold: int = 20) -> None:
     """
-    Histogram of tweet count per month in a dataframe
+    Line plot of hashtag use grouped by month
     """
-    dataframe['month'] = dataframe['created_at'].dt.to_period('M').dt.to_timestamp()
-    dataframe['hashtags'] = dataframe['entities'].apply(
-        lambda row: extract_hashtags_from_row(row)
-    )
-    dataframe = dataframe.explode(
-        column='hashtags',
-        ignore_index=True
-    )
-    dataframe['hashtags'] = dataframe['hashtags'].str.lower()
-    dataframe_count = dataframe.groupby('hashtags').count()
-    dataframe_count = dataframe_count[dataframe_count['id'] > min_count_threshold]
-    dataframe = dataframe[dataframe['hashtags'].isin(dataframe_count.index.tolist())]
+    dataframe = add_month_column(dataframe)
+    dataframe = add_hashtags_column(dataframe)
+    dataframe = explode_lowered_hashtags(dataframe)
+    hashtags = filter_hashtags_by_count(dataframe, min_count_threshold)
+    dataframe = dataframe[dataframe['hashtags'].isin(hashtags)]
     dataframe = dataframe.groupby(
         by=['month', 'hashtags'],
         as_index=False
@@ -396,7 +369,7 @@ def plot_hashtags_evolution(
         x='month',
         y='hashtag count',
         color='hashtags',
-        color_discrete_sequence=px.colors.qualitative.G10 + px.colors.qualitative.Vivid
+        color_discrete_sequence=px.colors.qualitative.Bold
     )
     fig.show()
 
@@ -404,7 +377,7 @@ def plot_hashtags_evolution(
 if __name__ == "__main__":
 
     df = read_json_dataframe(
-        file_path='/home/juliette/data/meToo_data/corpora/JAPAN_oct-2017-oct-2019/user_id_selected/tweets_2017_2019_with_users_df.json',
+        file_path=os.environ.get('USERS_DATA_PATH'),
         remove_duplicates=True
     )
     plot_hashtags_evolution(df, 50)

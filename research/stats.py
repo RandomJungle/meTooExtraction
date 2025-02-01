@@ -7,8 +7,6 @@ from typing import Dict, List, Callable, Tuple
 
 import pandas as pd
 
-import utils.paths as paths
-
 from utils.converters import file_to_month
 from utils.file_utils import read_corpus_generator, read_jsonl_generator, read_variable_dict, read_analysis_csv
 from utils.tweet_utils import get_day_of_tweet, get_language_of_tweet, get_hour_of_tweet, get_weekday_of_tweet, \
@@ -531,5 +529,5 @@ def count_type_frequency(data_path: str):
 
 if __name__ == "__main__":
     print(count_corpus(
-        data_path=paths.JAPAN_2017_2019_CLEAN,
+        data_path='',
     ))

@@ -6,7 +6,6 @@ from typing import Callable, List
 from spacy.matcher import Matcher
 from tqdm import tqdm
 
-from utils import paths
 from utils.file_utils import read_corpus_generator
 
 
@@ -116,7 +115,7 @@ def get_end_offset(start_position, end_position, doc):
 
 
 if __name__ == "__main__":
-    tags = list_words_per_morpho_tag(paths.FINAL_CORPUS_DIR, "text", hard_limit=200)
+    tags = list_words_per_morpho_tag('', "text", hard_limit=200)
     for tag, words in tags.items():
         print(tag)
         print(set(words))

@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "metooextraction"
+version = "0.1.0"
+description = ""
+authors = ["juliette bourquin <bourquinjuliette@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+searchtweets-v2 = "^1.1.1"
+chardet = "^5.0.0"
+pandas = "^1.5.1"
+spacy = "^3.4.2"
+tqdm = "^4.64.1"
+matplotlib = "^3.6.2"
+wordcloud = "^1.8.2.2"
+seaborn = "^0.12.2"
+deepl = "^1.14.0"
+python-dotenv = "^1.0.1"
+plotly = "^5.24.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
