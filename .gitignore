@@ -9,6 +9,7 @@ utils/deepl_auth.py
 
 data/
 .env
+*.env
 
 # pycharm
 .idea/
