@@ -1,10 +1,11 @@
 import json
+import os
 import re
-
 from typing import Dict, List
 
+from dotenv import load_dotenv, find_dotenv
+
 from research import nlp
-from utils import paths
 from utils.file_utils import read_corpus_generator, read_corpus_list
 from utils.tweet_utils import is_filtered_tweet
 
@@ -75,11 +76,14 @@ def add_quote_metadata(tweets: List[Dict]):
 
 
 if __name__ == "__main__":
+
+    load_dotenv(find_dotenv())
+
     annotate_corpus_pipeline(
-        data_path=paths.NO_TESTIMONY_CORPUS_DIR,
-        output_path=paths.FINAL_CORPUS_JSONL,
-        gender_json_path=paths.KEYWORDS_JSON_PATH,
-        filter_id_path=paths.TWEET_IDS_TO_FILTER_JSON,
-        lexical_fields_path=paths.LEXICAL_FIELDS_JSON
+        data_path=os.environ.get('NO_TESTIMONY_CORPUS_DIR'),
+        output_path=os.environ.get('FINAL_CORPUS_JSONL'),
+        gender_json_path=os.environ.get('KEYWORDS_JSON_PATH'),
+        filter_id_path=os.environ.get('TWEET_IDS_TO_FILTER_JSON'),
+        lexical_fields_path=os.environ.get('LEXICAL_FIELDS_JSON')
     )
 

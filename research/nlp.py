@@ -21,7 +21,9 @@ def tokenize_all_tweet_texts(
         text_key: str = "text",
         filter_function: Callable = None):
     # keeping only 'NOUN', ' VERB', 'ADV', 'PROPN', 'ADJ', 'PART', 'NOUN|Polarity=Neg'
-    forbidden_pos = ['SCONJ', 'PUNCT', 'DET', 'NUM', 'PRON', 'CCONJ', 'SYM', 'SCONJ|Polarity=Neg', 'ADP', 'AUX', 'SPACE']
+    forbidden_pos = [
+        'SCONJ', 'PUNCT', 'DET', 'NUM', 'PRON', 'CCONJ', 'SYM', 'SCONJ|Polarity=Neg', 'ADP', 'AUX', 'SPACE'
+    ]
     words_to_keep = ['嫌がらせ', '歳']
     with open(stopword_path, 'r') as stopword_file:
         stopwords = [line.strip() for line in stopword_file.readlines()]

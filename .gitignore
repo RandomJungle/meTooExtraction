@@ -1,7 +1,3 @@
-# Removing all poetry files (for now)
-poetry.lock
-pyproject.toml
-
 # twitter credentials
 .twitter_keys.yaml
 utils/paths.py

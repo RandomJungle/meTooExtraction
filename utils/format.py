@@ -1,4 +1,3 @@
-import csv
 import datetime
 import json
 import logging
@@ -6,13 +5,11 @@ import os
 import re
 from typing import Callable
 
-import deepl
 import pandas
 import pandas as pd
 from tqdm import tqdm
 
-from deepl_auth import deepl_auth
-from utils import paths, converters
+from utils import converters
 from utils.file_utils import (
     read_jsonl_generator,
     write_tweets_to_jsonl,
@@ -179,20 +176,6 @@ def format_dataset_to_include_user_info(
                     output_file.write(json.dumps(tweet) + '\n')
 
 
-def format_dataset_to_add_deepl_translation(input_data_path: str, output_data_path: str):
-    translator = deepl.Translator(deepl_auth)
-    for file_name in tqdm(os.listdir(input_data_path)):
-        if file_name.endswith('.jsonl'):
-            with open(os.path.join(output_data_path, file_name), 'w+') as output_file:
-                for tweet in read_jsonl_generator(os.path.join(input_data_path, file_name)):
-                    # deepl api call
-                    text = tweet.get('text')
-                    fr_result = translator.translate_text(text, target_lang='fr')
-                    translated_text = fr_result.text
-                    tweet.update({'text_fr': translated_text})
-                    output_file.write(json.dumps(tweet) + '\n')
-
-
 def flatten_jsonl_dataset(input_data_path: str, output_data_path: str):
     for file_name in tqdm(os.listdir(input_data_path)):
         if file_name.endswith('.jsonl'):
@@ -221,8 +204,8 @@ def format_jsonl_dataset_to_csv(input_path: str, output_path):
 
 
 if __name__ == '__main__':
-    '/home/juliette/projects/meTooExtraction/info/analysis/user_ids_selection.txt'
+
     format_jsonl_dataset_to_csv(
-        input_path='/home/juliette/data/meToo_data/japan/public_metric_jsonl/flatten',
-        output_path='/home/juliette/data/meToo_data/japan/public_metric_csv'
+        input_path=os.environ.get('DATA_FLATTEN'),
+        output_path='public_metric_csv'
     )
