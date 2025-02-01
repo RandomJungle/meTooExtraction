@@ -1,10 +1,11 @@
 import csv
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 import chardet
 import json
 import os
 
+import pandas as pd
 from tqdm import tqdm
 
 
@@ -31,6 +32,25 @@ def read_jsonl_generator(file_path: str):
 def read_jsonl_list(file_path: str) -> List[Dict]:
     with open(file_path, 'r') as data_file:
         return [json.loads(line) for line in data_file.readlines()]
+
+
+def read_json_dataframe(
+        file_path: str,
+        remove_duplicates: bool,
+        orient: Optional[str] = 'table') -> pd.DataFrame:
+    if file_path.endswith('.jsonl'):
+        dataframe = pd.read_json(
+            path_or_buf=file_path,
+            lines=True
+        )
+    else:
+        dataframe = pd.read_json(
+            path_or_buf=file_path,
+            orient=orient
+        )
+    if remove_duplicates:
+        dataframe = dataframe.drop_duplicates(subset='id')
+    return dataframe
 
 
 def read_corpus_list(data_path: str):

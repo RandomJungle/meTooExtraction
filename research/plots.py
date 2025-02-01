@@ -1,18 +1,18 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-
-import seaborn as sns
-
 from typing import List, Dict, Callable, Tuple
 
-from tqdm import tqdm
+import pandas as pd
+import plotly.express as px
+import seaborn as sns
 from wordcloud import WordCloud
 
 from research.stats import count_time_of_tweets
 from utils import paths
 from research import stats, nlp
-from utils.tweet_utils import is_testimony, is_not_retweet
+from utils.file_utils import read_json_dataframe
+from utils.tweet_utils import is_testimony
 
 
 def create_plot_file_name(file_name: str):
@@ -345,39 +345,66 @@ def plot_analysis_pie_charts(
             title=variable_data.get("title"))
 
 
+def plot_tweet_count_per_month(
+        dataframe: pd.DataFrame) -> None:
+    """
+    Histogram of tweet count per month in a dataframe
+    """
+    fig = px.histogram(
+        dataframe,
+        x='created_at',
+        color='user_username',
+        color_discrete_sequence=px.colors.qualitative.G10 + px.colors.qualitative.Vivid
+    )
+    fig.show()
+
+
+def extract_hashtags_from_row(row) -> List[str]:
+    if isinstance(row, dict):
+        hashtags = row.get('hashtags')
+        if hashtags:
+            return [hashtag.get('tag') for hashtag in hashtags]
+    return []
+
+
+def plot_hashtags_evolution(
+        dataframe: pd.DataFrame,
+        min_count_threshold: int = 20) -> None:
+    """
+    Histogram of tweet count per month in a dataframe
+    """
+    dataframe['month'] = dataframe['created_at'].dt.to_period('M').dt.to_timestamp()
+    dataframe['hashtags'] = dataframe['entities'].apply(
+        lambda row: extract_hashtags_from_row(row)
+    )
+    dataframe = dataframe.explode(
+        column='hashtags',
+        ignore_index=True
+    )
+    dataframe['hashtags'] = dataframe['hashtags'].str.lower()
+    dataframe_count = dataframe.groupby('hashtags').count()
+    dataframe_count = dataframe_count[dataframe_count['id'] > min_count_threshold]
+    dataframe = dataframe[dataframe['hashtags'].isin(dataframe_count.index.tolist())]
+    dataframe = dataframe.groupby(
+        by=['month', 'hashtags'],
+        as_index=False
+    ).apply(lambda x: pd.Series({
+        'hashtag count': x['id'].count(),
+    }))
+    fig = px.line(
+        dataframe,
+        x='month',
+        y='hashtag count',
+        color='hashtags',
+        color_discrete_sequence=px.colors.qualitative.G10 + px.colors.qualitative.Vivid
+    )
+    fig.show()
+
+
 if __name__ == "__main__":
-    dates_list = [
-        ((2017, 10, 1), (2017, 11, 1)),
-        ((2017, 11, 1), (2017, 12, 1)),
-        ((2017, 12, 1), (2018, 1, 1)),
-        ((2018, 1, 1), (2018, 2, 1)),
-        ((2018, 2, 1), (2018, 3, 1)),
-        ((2018, 3, 1), (2018, 4, 1)),
-        ((2018, 4, 1), (2018, 5, 1)),
-        ((2018, 5, 1), (2018, 6, 1)),
-        ((2018, 6, 1), (2018, 7, 1)),
-        ((2018, 7, 1), (2018, 8, 1)),
-        ((2018, 8, 1), (2018, 9, 1)),
-        ((2018, 9, 1), (2018, 10, 1)),
-        ((2018, 10, 1), (2018, 11, 1)),
-        ((2018, 11, 1), (2018, 12, 1)),
-        ((2018, 12, 1), (2019, 1, 1)),
-        ((2019, 1, 1), (2019, 2, 1)),
-        ((2019, 2, 1), (2019, 3, 1)),
-        ((2019, 3, 1), (2019, 4, 1)),
-        ((2019, 4, 1), (2019, 5, 1)),
-        ((2019, 5, 1), (2019, 6, 1)),
-        ((2019, 6, 1), (2019, 7, 1)),
-        ((2019, 7, 1), (2019, 8, 1)),
-        ((2019, 8, 1), (2019, 9, 1)),
-        ((2019, 9, 1), (2019, 10, 1)),
-        ((2019, 10, 1), (2019, 11, 1)),
-    ]
-    for dates in tqdm(dates_list):
-        plot_days_counts(
-            data_path=paths.JAPAN_2017_2019_CLEAN,
-            figure_name=f"tweet count per days from {dates[0]} to {dates[1]}",
-            filter_function=is_not_retweet,
-            start_date=dates[0],
-            end_date=dates[1],
-            every_nth=2)
+
+    df = read_json_dataframe(
+        file_path='/home/juliette/data/meToo_data/corpora/JAPAN_oct-2017-oct-2019/user_id_selected/tweets_2017_2019_with_users_df.json',
+        remove_duplicates=True
+    )
+    plot_hashtags_evolution(df, 50)

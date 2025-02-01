@@ -6,10 +6,18 @@ from typing import List
 import pandas as pd
 import plotly.express as px
 from dotenv import find_dotenv, load_dotenv
+from tqdm import tqdm
+
 from searchtweets import load_credentials
 
 from utils.file_utils import read_corpus_generator, read_txt_list
 from utils.tweet_utils import is_retweet
+
+
+def read_user_ids_txt(txt_path: str):
+    with open(txt_path, 'r') as txt_file:
+        ids = [line.strip() for line in txt_file.readlines()]
+    return ids
 
 
 def chunks_generator(lst, n):
@@ -88,7 +96,7 @@ def query_users_info(data_path: str, output_jsonl_path: str, output_csv_path: st
 
 def filter_corpus_by_users(data_path: str, user_ids: List[str]):
     tweets = []
-    for tweet in read_corpus_generator(data_path):
+    for tweet in tqdm(read_corpus_generator(data_path)):
         if tweet.get('author_id') in user_ids:
             tweets.append(tweet)
     return tweets
@@ -141,38 +149,59 @@ def create_filtered_corpus():
     )
 
 
+def filter_and_merge_user_data(
+        file_paths_list: List[str],
+        user_ids_txt_path: str,
+        user_data_csv_path: str,
+        output_df_path: str) -> None:
+    """
+    Filter tweets from a list of directories sources, according to user ids
+    and add user information from external csv
+
+    Args:
+        file_paths_list: list of directories in which to harvest the tweets data
+        user_ids_txt_path: path to txt file containing user ids to filter for
+        user_data_csv_path: path to csv file of user extended information
+        output_df_path: path to write pandas DataFrame output to
+
+    Returns:
+        None, write dataframe to file
+    """
+    tweets = []
+    user_ids_selected = read_user_ids_txt(user_ids_txt_path)
+    users_data = pd.read_csv(user_data_csv_path)
+    for file_path in file_paths_list:
+        tweets.extend(
+            filter_corpus_by_users(
+                data_path=file_path,
+                user_ids=user_ids_selected
+            )
+        )
+    dataframe = pd.DataFrame(tweets)
+    merged = pd.merge(
+        left=dataframe,
+        right=users_data,
+        how='left',
+        left_on='author_id',
+        right_on='user_id'
+    )
+    merged.to_json(
+        path_or_buf=output_df_path,
+        orient='table'
+    )
+
+
 if __name__ == "__main__":
 
     load_dotenv(find_dotenv())
 
-    create_filtered_corpus()
-
-    df = pd.read_json('/Users/juliette/Desktop/data_temp.json')
-
-    df['author_id'] = df['author_id'].astype(str)
-
-    fig = px.histogram(
-        df,
-        x='created_at',
-        color='author_id',
-        color_discrete_sequence=px.colors.qualitative.Alphabet
+    filter_and_merge_user_data(
+        file_paths_list=[
+            '/home/juliette/data/meToo_data/corpora/JAPAN_oct-2017-oct-2019/unified_2025/raw_2021',
+            '/home/juliette/data/meToo_data/corpora/JAPAN_oct-2017-oct-2019/unified_2025/raw_2022',
+            '/home/juliette/data/meToo_data/corpora/JAPAN_oct-2017-oct-2019/raw'
+        ],
+        user_ids_txt_path='/home/juliette/projects/meTooExtraction/info/search/user_ids.txt',
+        user_data_csv_path='/home/juliette/data/meToo_data/corpora/JAPAN_oct-2017-oct-2019/users_data.csv',
+        output_df_path='/home/juliette/data/meToo_data/corpora/JAPAN_oct-2017-oct-2019/user_id_selected/tweets_2017_2019_with_users_df.json'
     )
-    fig.show()
-
-    fig = px.scatter(
-        df,
-        x='created_at',
-        y='retweet_count',
-        color='author_id',
-        color_discrete_sequence=px.colors.qualitative.Alphabet
-    )
-    fig.show()
-
-
-    '''
-    query_users_info(
-        data_path=os.environ.get('JAPAN_PUBLIC_METRIC_JSON'),
-        output_jsonl_path="/home/juliette/data/meToo_data/japan/public_metric_user_info.jsonl",
-        output_csv_path="/home/juliette/data/meToo_data/japan/public_metric_user_info.csv"
-    )
-    '''
