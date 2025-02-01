@@ -43,6 +43,14 @@ def read_corpus_list(data_path: str):
     return tweets
 
 
+def read_txt_list(file_path: str):
+    file_list = []
+    with open(file_path, 'r') as input_file:
+        for line in input_file.readlines():
+            file_list.append(line.strip())
+    return file_list
+
+
 def select_tweets_from_ids_in_corpus(data_path: str, tweet_ids: List[int]):
     tweets = []
     for tweet in read_corpus_generator(data_path):

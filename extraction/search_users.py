@@ -1,11 +1,15 @@
 import requests
 import json
-
-from searchtweets import load_credentials
+import os
 from typing import List
 
-from utils import paths
-from utils.file_utils import read_corpus_generator
+import pandas as pd
+import plotly.express as px
+from dotenv import find_dotenv, load_dotenv
+from searchtweets import load_credentials
+
+from utils.file_utils import read_corpus_generator, read_txt_list
+from utils.tweet_utils import is_retweet
 
 
 def chunks_generator(lst, n):
@@ -82,9 +86,93 @@ def query_users_info(data_path: str, output_jsonl_path: str, output_csv_path: st
             output_file.write(json.dumps(json_user_info, sort_keys=True) + "\n")
 
 
+def filter_corpus_by_users(data_path: str, user_ids: List[str]):
+    tweets = []
+    for tweet in read_corpus_generator(data_path):
+        if tweet.get('author_id') in user_ids:
+            tweets.append(tweet)
+    return tweets
+
+
+def create_filtered_corpus():
+    user_ids = read_txt_list(
+        '/Users/juliette/Projects/meTooExtraction/info/search/user_ids.txt'
+    )
+    tweets_2021 = filter_corpus_by_users(
+        data_path='/Users/juliette/Desktop/raw_2021',
+        user_ids=user_ids
+    )
+    tweets_2022 = filter_corpus_by_users(
+        data_path='/Users/juliette/Desktop/raw_2022',
+        user_ids=user_ids
+    )
+    total_tweets = tweets_2021 + tweets_2022
+    total_tweets = [tweet for tweet in total_tweets if not is_retweet(tweet)]
+    tweet_set = []
+    found_ids = []
+    for tweet in total_tweets:
+        if tweet.get('id') not in found_ids:
+            tweet_set.append(tweet)
+            found_ids.append(tweet.get('id'))
+    user_tweets = {}
+    for user_id in user_ids:
+        for tweet in tweet_set:
+            if tweet.get('author_id') == user_id:
+                if user_id in user_tweets:
+                    user_tweets[user_id] = user_tweets[user_id] + [tweet]
+                else:
+                    user_tweets[user_id] = [tweet]
+    final_tweets = []
+    for key, value in user_tweets.items():
+        value.sort(key=lambda x: x.get('public_metrics').get('retweet_count'), reverse=True)
+        final_tweets.extend(value[:5])
+    df = pd.DataFrame.from_records(final_tweets)
+    for metric in ['like_count', 'quote_count', 'reply_count', 'retweet_count']:
+        df[metric] = df['public_metrics'].apply(
+            lambda row: row.get(metric)
+        )
+    df['author_id'] = df['author_id'].astype(str)
+    df.to_json(
+        '/Users/juliette/Desktop/data_temp.json',
+    )
+    df.to_csv(
+        '/Users/juliette/Desktop/data_temp.csv',
+        index=False
+    )
+
+
 if __name__ == "__main__":
+
+    load_dotenv(find_dotenv())
+
+    create_filtered_corpus()
+
+    df = pd.read_json('/Users/juliette/Desktop/data_temp.json')
+
+    df['author_id'] = df['author_id'].astype(str)
+
+    fig = px.histogram(
+        df,
+        x='created_at',
+        color='author_id',
+        color_discrete_sequence=px.colors.qualitative.Alphabet
+    )
+    fig.show()
+
+    fig = px.scatter(
+        df,
+        x='created_at',
+        y='retweet_count',
+        color='author_id',
+        color_discrete_sequence=px.colors.qualitative.Alphabet
+    )
+    fig.show()
+
+
+    '''
     query_users_info(
-        data_path=paths.JAPAN_PUBLIC_METRIC_JSONL,
+        data_path=os.environ.get('JAPAN_PUBLIC_METRIC_JSON'),
         output_jsonl_path="/home/juliette/data/meToo_data/japan/public_metric_user_info.jsonl",
         output_csv_path="/home/juliette/data/meToo_data/japan/public_metric_user_info.csv"
     )
+    '''

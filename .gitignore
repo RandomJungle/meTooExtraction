@@ -4,6 +4,7 @@ utils/paths.py
 utils/deepl_auth.py
 
 data/
+.env
 
 # pycharm
 .idea/
