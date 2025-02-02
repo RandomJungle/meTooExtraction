@@ -26,7 +26,9 @@ def basic_pipeline(dataframe: pd.DataFrame) -> pd.DataFrame:
             add_day_column,
             add_quote_reply_retweet_columns,
             add_reference_type_column,
-            add_hashtags_column
+            add_hashtags_column,
+            add_public_metrics_column,
+            add_identity_column
         ])
     return dataframe
 
@@ -143,6 +145,45 @@ def add_reference_type_column(
     """
     dataframe['reference_type'] = dataframe.apply(
         determine_reference_label, axis=1
+    )
+    return dataframe
+
+
+def add_public_metrics_column(
+        dataframe: pd.DataFrame) -> pd.DataFrame:
+    """
+    Add column based on the public metrics {retweet_count, quote_count, reply_count, like_count}
+    """
+    metrics = ['retweet_count', 'quote_count', 'reply_count', 'like_count']
+    for metric in metrics:
+        dataframe[metric] = dataframe['public_metrics'].apply(
+            lambda x: x.get(metric)
+        )
+    return dataframe
+
+
+def add_identities_booleans(
+        row: pd.Series, columns: List[str]) -> List[str]:
+    identities = []
+    for column in columns:
+        if row[column]:
+            identities.append(column)
+    return identities
+
+
+def add_identity_column(
+        dataframe: pd.DataFrame) -> pd.DataFrame:
+    """
+    Add column based on the public metrics {retweet_count, quote_count, reply_count, like_count}
+    """
+    identity_columns = [
+        'media', 'journalist', 'victim', 'youtuber', 'academic', 'writer_editor', 'nationalist',
+        'personality', 'politicized', 'activist', 'political', 'feminist_activist', 'jurist',
+        'translator_interpret', 'group_organization', 'meninist_activist'
+    ]
+    dataframe['identities'] = dataframe.apply(
+        lambda row: add_identities_booleans(row, identity_columns),
+        axis=1
     )
     return dataframe
 
