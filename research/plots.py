@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
 import os
-from typing import Callable, Optional
+from typing import Callable, Optional, Tuple, List
 
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 from dotenv import find_dotenv, load_dotenv
-from plotly.graph_objs import Figure
 from wordcloud import WordCloud
 
 from research import nlp
@@ -16,7 +16,7 @@ from utils.df_transform import (
     filter_hashtags_by_count,
     add_quote_reply_retweet_columns,
     add_reference_type_column,
-    df_pipeline
+    df_pipeline, add_day_column, basic_pipeline
 )
 from utils.file_utils import read_json_dataframe
 
@@ -24,7 +24,7 @@ from utils.file_utils import read_json_dataframe
 load_dotenv(find_dotenv())
 
 
-def export_plotly_image(figure: Figure, output_path: str | None) -> None:
+def export_plotly_image(figure: go.Figure, output_path: str | None) -> None:
     if output_path:
         if output_path.endswith('html'):
             figure.write_html(output_path)
@@ -32,6 +32,17 @@ def export_plotly_image(figure: Figure, output_path: str | None) -> None:
             figure.write_image(output_path)
     else:
         figure.show()
+
+
+def define_width_and_height(output_path: str) -> Tuple[int | None, int | None]:
+    """
+    Define output image width and height according to output path
+    """
+    if not output_path:
+        return None, None
+    elif output_path.endswith('html'):
+        return None, None
+    return 1200, 600
 
 
 def word_cloud_from_tokenized_text(
@@ -74,24 +85,26 @@ def plot_tweet_count_per_month(
     """
     Histogram of tweet count per month in a dataframe
     """
+    width, height = define_width_and_height(output_path)
     fig = px.histogram(
         dataframe,
         x='created_at',
         color='user_username',
-        width=1200,
-        height=600,
-        color_discrete_sequence=px.colors.qualitative.G10 + px.colors.qualitative.Vivid
+        color_discrete_sequence=px.colors.qualitative.G10 + px.colors.qualitative.Vivid,
+        width = width,
+        height = height
     )
     export_plotly_image(fig, output_path)
 
 
-def plot_hashtags_evolution(
+def plot_hashtags_timeline(
         dataframe: pd.DataFrame,
         min_count_threshold: int = 20,
         output_path: Optional[str] = None) -> None:
     """
     Line plot of hashtag use grouped by month
     """
+    width, height = define_width_and_height(output_path)
     dataframe = df_pipeline(
         dataframe=dataframe,
         functions=[add_month_column, add_hashtags_column, explode_lowered_hashtags])
@@ -109,8 +122,8 @@ def plot_hashtags_evolution(
         y='hashtag count',
         color='hashtags',
         color_discrete_sequence=px.colors.qualitative.Bold,
-        width = 1200,
-        height = 600
+        width = width,
+        height = height
     )
     export_plotly_image(fig, output_path)
 
@@ -123,9 +136,6 @@ def plot_tweet_type(
     """
     Simple histogram of distribution of tweet type (OG, quote, reply and RT)
     """
-    dataframe = df_pipeline(
-        dataframe=dataframe,
-        functions=[add_quote_reply_retweet_columns, add_reference_type_column])
     fig = px.histogram(
         dataframe,
         x='reference_type',
@@ -135,14 +145,75 @@ def plot_tweet_type(
     export_plotly_image(fig, output_path)
 
 
+def plot_tweet_timeline_hist(
+        dataframe: pd.DataFrame,
+        color_column: str,
+        output_path: Optional[str] = None) -> None:
+    """
+    Line plot of hashtag use grouped by month
+    """
+    width, height = define_width_and_height(output_path)
+    fig = px.histogram(
+        dataframe,
+        x='created_at',
+        color=color_column,
+        color_discrete_sequence=px.colors.qualitative.Bold,
+        width=width,
+        height=height
+    )
+    export_plotly_image(fig, output_path)
+
+
+def plot_pie_chart(
+        dataframe: pd.DataFrame,
+        values_column: Optional[str] = None,
+        names_column: Optional[str] = None,
+        title: Optional[str] = None,
+        output_path: Optional[str] = None) -> None:
+    """
+    Generic pie chart adaptable to the dataframe
+    """
+    width, height = define_width_and_height(output_path)
+    fig = px.pie(
+        dataframe,
+        values=values_column,
+        names=names_column,
+        color_discrete_sequence=px.colors.qualitative.G10 + px.colors.qualitative.Vivid,
+        title=title,
+        width = width,
+        height = height
+    )
+    text_pos = 'inside' if not output_path or output_path.endswith('.html') else 'outside'
+    fig.update_traces(textposition=text_pos, textinfo='percent+label')
+    export_plotly_image(fig, output_path)
+
+
+def plot_multi_column_histogram(
+        dataframe: pd.DataFrame,
+        columns: List[str],
+        title: Optional[str] = None,
+        output_path: Optional[str] = None) -> None:
+    # width, height = define_width_and_height(output_path)
+    fig = go.Figure()
+    for column in columns:
+        fig.add_trace(
+            go.Histogram(
+                # histfunc='count',
+                x=dataframe[column],
+                name=f'{column} count'
+            )
+        )
+    export_plotly_image(fig, output_path)
+
+
 if __name__ == "__main__":
 
     df = read_json_dataframe(
         file_path=os.environ.get('USERS_DATA_PATH'),
         remove_duplicates=True
     )
-    plot_tweet_type(
-        df,
-        color_column='group_organization',
-        pattern_column='journalist'
+    plot_multi_column_histogram(
+        dataframe=df,
+        columns=['activist', 'journalist', 'media'],
+        title=''
     )

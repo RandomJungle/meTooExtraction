@@ -8,12 +8,27 @@ from dotenv import load_dotenv, find_dotenv
 from utils.file_utils import read_json_dataframe
 
 
-# Compose the functions into a pipeline
 def df_pipeline(dataframe, functions):
     """
     Pipeline function to chain functions on a dataframe
     """
     return reduce(lambda d, f: f(d), functions, dataframe)
+
+
+def basic_pipeline(dataframe: pd.DataFrame) -> pd.DataFrame:
+    """
+    Transforms applied to dataframe additional (no column removal)
+    """
+    df_pipeline(
+        dataframe=dataframe,
+        functions=[
+            add_month_column,
+            add_day_column,
+            add_quote_reply_retweet_columns,
+            add_reference_type_column,
+            add_hashtags_column
+        ])
+    return dataframe
 
 
 def add_month_column(dataframe: pd.DataFrame) -> pd.DataFrame:
@@ -205,4 +220,7 @@ if __name__ == '__main__':
         remove_duplicates=True
     )
     df = tweet_per_user_per_month_table(df)
-    df.to_csv('/Users/juliette/Desktop/Thaïs meToo data/tweet_per_user_per_month_table.csv', index=True)
+    df.to_csv(
+        'tweet_per_user_per_month_table.csv',
+        index=True
+    )
