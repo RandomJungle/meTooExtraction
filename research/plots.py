@@ -6,6 +6,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from dotenv import find_dotenv, load_dotenv
+from plotly.subplots import make_subplots
 from wordcloud import WordCloud
 
 from research import nlp
@@ -41,7 +42,7 @@ def define_width_and_height(output_path: str) -> Tuple[int | None, int | None]:
         return None, None
     elif output_path.endswith('html'):
         return None, None
-    return 1200, 400
+    return 1200, 800
 
 
 def word_cloud_from_tokenized_text(
@@ -268,24 +269,42 @@ def plot_public_metrics_per_user_boxplot(
 
 def plot_average_metric_per_tweet_per_user(
         dataframe: pd.DataFrame,
-        metric: str,
         title: Optional[str] = None,
         output_path: Optional[str] = None) -> None:
     """
-    Boxplot of all four public metrics distributions
+    Histogram of averages for all public metrics per user
     """
-    width, height = define_width_and_height(output_path)
-    fig = px.histogram(
-        dataframe,
-        x='user_username',
-        y=metric,
-        color_discrete_sequence=px.colors.qualitative.Plotly,
-        histfunc='avg',
-        text_auto='.2r',
-        width=width,
-        height=height,
-        title=title
+    layout = dict(
+        hoversubplots='axis',
+        title=dict(text=title),
+        hovermode='x',
+        grid=dict(rows=4, columns=1),
+        autosize=False,
+        width=1200,
+        height=1000,
+        legend=dict(
+            orientation='h',
+            yanchor='bottom',
+            y=1.02,
+            xanchor='left',
+            x=0.0
+        )
     )
+    data = []
+    for index, metric in enumerate(['reply', 'retweet', 'quote', 'like']):
+        y_axis = 'y' if index == 0 else f'y{index + 1}'
+        data.append(
+            go.Histogram(
+                x=dataframe['user_username'],
+                y=dataframe[f'{metric}_count'],
+                texttemplate='%{y:.2f}',
+                histfunc='avg',
+                xaxis='x',
+                yaxis=y_axis,
+                name=f'average number of {metric} per tweet'
+            )
+        )
+    fig = go.Figure(data=data, layout=layout)
     export_plotly_image(fig, output_path)
 
 
@@ -296,10 +315,11 @@ if __name__ == "__main__":
         remove_duplicates=True
     )
     df = basic_pipeline(df)
-    metric_here = 'quote'
     plot_average_metric_per_tweet_per_user(
         dataframe=df,
-        metric=f'{metric_here}_count',
-        title=f'Moyenne des {metric_here}s par tweet par utilisateur',
-        output_path=f'/Users/juliette/Desktop/Thaïs meToo data/plots/avg_{metric_here}_count_per_user_hist.png'
+        title='Mean metrics per tweet per user',
+        output_path=os.path.join(
+            os.environ.get('OUTPUT_PLOT_DIR'),
+            'avg_metrics_count_per_user_hist.png'
+        )
     )
