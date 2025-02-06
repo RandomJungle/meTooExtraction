@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 import pandas as pd
 from dotenv import find_dotenv, load_dotenv
@@ -8,8 +8,9 @@ import os
 
 from tqdm import tqdm
 
+from llm_utils import convert_content_to_json
 from utils.df_transform import chunk_dataframe
-from utils.file_utils import read_json_dataframe
+from utils.file_utils import read_json_dataframe, read_json_file, read_prompt_file
 
 
 def query_embeddings(
@@ -46,9 +47,11 @@ def query_embeddings(
 
 def query_chat(
         dataframe: pd.DataFrame,
-        model_name: Optional[str] = 'mistral-embed',
+        prompt: Dict,
+        model_name: Optional[str] = 'mistral-large-latest',
         temperature: Optional[float] = 0.2,
-        num_chunks: Optional[int] = 1) -> List[str]:
+        num_chunks: Optional[int] = 1,
+        stream: Optional[bool] = False) -> pd.DataFrame:
 
     data = dataframe[['id', 'text']]
     if num_chunks <= 1:
@@ -60,34 +63,53 @@ def query_chat(
     client = Mistral(api_key=os.getenv('MISTRAL_API_KEY', ''))
 
     for chunk in tqdm(chunks):
-        chunk_csv = chunk.to_csv(index=False)
-        chunk_response = client.chat.complete(
-            model=model_name,
-            messages=[
-                {
-                    'content': (
-                        'In the following table in csv format, specified by the tags <t></t> '
-                        'there is a column "text" that contains tweets in japanese, '
-                        'please annotate with 2 new column returned as json, '
-                        'one with the english translation of the text, '
-                        'and one with tags that represent the sentiment expressed by the text'
-                        'from the following set of labels : '
-                        '{frustration, anger, sadness, shock, respect, shame, joy, humour}'
-                        f'\n\ntable : <t>{chunk_csv}</t>'
-                    ),
-                    'role': 'user',
-                },
-            ],
-            stream=False,
-            temperature=temperature,
-            response_format={
-                'type': 'json_object',
-            }
+        chunk_json = chunk.to_json(orient='records')
+        messages = [
+            {
+                'content': prompt.get('content') + f'<t>{chunk_json}</t>',
+                'role': 'user',
+            },
+        ]
+        if not stream:
+            response = client.chat.complete(
+                model=model_name,
+                messages=messages,
+                temperature=temperature,
+                response_format={
+                    'type': 'json_object',
+                }
+            )
+            content = response.choices[0].message.content
+        else:
+            response = client.chat.stream(
+                model=model_name,
+                messages=messages,
+                temperature=temperature,
+                response_format={
+                    'type': 'json_object',
+                }
+            )
+            collected_messages = []
+            for res_chunk in response:
+                chunk_content = res_chunk.data.choices[0].delta.content
+                collected_messages.append(chunk_content)
+                print(chunk_content)
+            content = ''.join([m for m in collected_messages if m is not None])
+        mini_df = pd.DataFrame.from_records(
+            convert_content_to_json(content)
         )
-        content = chunk_response.choices[0].message.content
-        responses.append(content)
+        print()
+        responses.append(mini_df)
 
-    return responses
+    output_dataframe = pd.concat(responses, ignore_index=True)
+    merged = pd.merge(
+        left=dataframe,
+        right=output_dataframe[['id', 'text_en']],
+        on='id',
+        how='left',
+        validate='1:1'
+    )
+    return merged
 
 
 if __name__ == '__main__':
@@ -98,7 +120,18 @@ if __name__ == '__main__':
         file_path=os.environ.get('USERS_DATA_PATH'),
         remove_duplicates=True
     )
-    output_responses = query_embeddings(
+    prompt_translate = read_prompt_file(
+        os.getenv('PROMPT_FILE_PATH'),
+        task='translate'
+    )
+    output_df = query_chat(
         dataframe=df,
+        prompt=prompt_translate,
         num_chunks=45,
+        model_name='ministral-8b-latest',
+        stream=True
+    )
+    output_df.to_json(
+        '/home/juliette/data/meToo_data/datasets/tweets_2017_2019_trad_mistral.json',
+        orient='table'
     )

@@ -2,3 +2,4 @@
 - analysis of domain names : get all tiny urls and query to extract longer url version (some might be medias)
 - Analyse de sentiment avec le schéma d'annotation
 - Clustering tweets 4500 + visualisation t-SNE / UMAP (khcoder ?)
+- Add translations for better visualizations

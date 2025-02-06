@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import Optional, Dict
 
 import numpy as np
 import pandas as pd
@@ -7,8 +7,9 @@ from dotenv import load_dotenv, find_dotenv
 from openai import OpenAI
 from tqdm import tqdm
 
+from llm_utils import convert_content_to_json
 from utils.df_transform import chunk_dataframe
-from utils.file_utils import read_json_dataframe
+from utils.file_utils import read_json_dataframe, read_prompt_file
 
 
 def query_embeddings(
@@ -18,7 +19,7 @@ def query_embeddings(
 
     data = dataframe[['id', 'text']]
     chunks = chunk_dataframe(data, num_chunks)
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", ""))
+    client = OpenAI(api_key=os.getenv('OPENAI_API_KEY', ''))
     outputs = []
 
     for chunk in tqdm(chunks):
@@ -42,39 +43,63 @@ def query_embeddings(
 
 def query_chat(
         dataframe: pd.DataFrame,
-        temperature: float,
-        num_chunks: int):
+        prompt: Dict,
+        model_name: Optional[str] = 'gpt-4o',
+        temperature: Optional[float] = 0.2,
+        num_chunks: Optional[int] = 1,
+        stream: Optional[bool] = False) -> pd.DataFrame:
 
-    client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
     data = dataframe[['id', 'text']]
-    chunks = np.array_split(data, num_chunks)
+    if num_chunks <= 1:
+        chunks = [data]
+    else:
+        chunks = chunk_dataframe(data, num_chunks)
     responses = []
 
-    for chunk in chunks:
-        completion = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {
-                    "role": "developer",
-                    "content": "You are an annotator who needs to annotate texts in japanese"
-                },
-                {
-                    "role": "user",
-                    "content": (
-                        "In the following table in array format, specified by the tags <t></t> "
-                        "there is a column 'text' that contains tweets, "
-                        "can you add a column to this table and return it in json format, "
-                        "the content of the new column should be an annotation on the text "
-                        "with 'true' if the text is a testimony and 'false' otherwise"
-                        f"\n\ntable : <t>{chunk}</t>"
-                    ),
-                }
-            ],
-            temperature=temperature
+    client = OpenAI(
+        api_key=os.environ.get('OPENAI_API_KEY')
+    )
+    for chunk in tqdm(chunks):
+        chunk_json = chunk.to_json(orient='records')
+        messages = [
+            {
+                'role': 'developer',
+                'content': prompt.get('role')
+            },
+            {
+                'role': 'user',
+                'content': prompt.get('content') + f'<t>{chunk_json}</t>',
+            }
+        ]
+        response = client.chat.completions.create(
+            model=model_name,
+            messages=messages,
+            temperature=temperature,
+            stream=stream
         )
-        responses.append(completion.choices[0].message.content)
+        if stream:
+            collected_messages = []
+            for res_chunk in response:
+                chunk_content = res_chunk.choices[0].delta.content
+                collected_messages.append(chunk_content)
+                print(chunk_content)
+            content = ''.join([m for m in collected_messages if m is not None])
+        else:
+            content = response.choices[0].message.content
+        mini_df = pd.DataFrame.from_records(
+            convert_content_to_json(content)
+        )
+        responses.append(mini_df)
 
-    return responses
+    output_dataframe = pd.concat(responses, ignore_index=True)
+    merged = pd.merge(
+        left=dataframe,
+        right=output_dataframe[['id', 'text_en']],
+        on='id',
+        how='left',
+        validate='1:1'
+    )
+    return merged
 
 
 if __name__ == '__main__':
@@ -85,8 +110,20 @@ if __name__ == '__main__':
         file_path=os.environ.get('USERS_DATA_PATH'),
         remove_duplicates=False
     )
-    output_responses = query_embeddings(
+    prompt_translate = read_prompt_file(
+        os.getenv('PROMPT_FILE_PATH'),
+        task='translate'
+    )
+    output_df = query_chat(
         dataframe=df,
-        num_chunks=45,
+        prompt=prompt_translate,
+        num_chunks=100,
+        model_name='gpt-4o-mini',
+        temperature=0.3,
+        stream=True
+    )
+    output_df.to_json(
+        '/home/juliette/data/meToo_data/datasets/tweets_2017_2019_trad_openai.json',
+        orient='table'
     )
 

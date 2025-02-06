@@ -320,14 +320,22 @@ def plot_tsne_scatter(
         width=width,
         height=height,
         title=title,
-        hover_name='user_username',
-        hover_data={
-            'created_at': True,
-            'reference_type': False,
-            f'{embedding_column}_x': False,
-            f'{embedding_column}_y': False,
-            'text_br': True,
-        }
+        custom_data=[
+            'user_username',
+            'created_at',
+            'text_br'
+        ]
+        # hover_name='user_username',
+        # hover_data={
+        #     'created_at': True,
+        #     'reference_type': False,
+        #     f'{embedding_column}_x': False,
+        #     f'{embedding_column}_y': False,
+        #     'text_br': True,
+        # }
+    )
+    fig.update_traces(
+        hovertemplate='<b>%{customdata[0]}</b><br><br>Published : %{customdata[1]}<br><br>%{customdata[2]}'
     )
     export_plotly_image(fig, output_path)
 
@@ -343,7 +351,7 @@ if __name__ == "__main__":
     df = add_line_break_text_column(df)
     mistral_model = 'mistral-embed'
     openai_model = 'text-embedding-3-large'
-    model = openai_model
+    model = mistral_model
     dim_red = 'umap'
     plot_tsne_scatter(
         dataframe=df,

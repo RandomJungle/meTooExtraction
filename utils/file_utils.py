@@ -53,6 +53,20 @@ def read_json_dataframe(
     return dataframe
 
 
+def read_prompt_file(
+        file_path: str,
+        task: str,
+        version: Optional[str] = 'latest') -> Dict:
+    with open(file_path, 'r') as prompt_file:
+        prompt_dict = json.loads(prompt_file.read())
+    task_dict = prompt_dict.get(task)
+    if version == 'latest':
+        selected_prompt = task_dict.get(max(task_dict.keys()))
+    else:
+        selected_prompt = task_dict.get(version)
+    return selected_prompt
+
+
 def read_corpus_list(data_path: str):
     tweets = []
     for file_name in os.listdir(data_path):
