@@ -1,4 +1,5 @@
 import os
+import re
 from functools import reduce
 from typing import List, Optional, Dict
 
@@ -248,6 +249,43 @@ def tweet_per_user_per_day_table(
         index=['day'],
         columns=['user_username'],
         aggfunc='count'
+    )
+    return dataframe
+
+
+def chunk_dataframe(
+        dataframe: pd.DataFrame,
+        num_chunks: int) -> List[pd.DataFrame]:
+    """
+    Split dataframe into n chunks (mainly for LLM querying)
+    """
+    rows_per_chunk = len(dataframe) // num_chunks
+    chunks = [
+        dataframe[i * rows_per_chunk:(i + 1) * rows_per_chunk]
+        for i in range(num_chunks)
+    ]
+    if len(dataframe) % num_chunks != 0:
+        chunks.append(dataframe[num_chunks * rows_per_chunk:])
+    return chunks
+
+
+def add_line_break_text_column(
+        dataframe: pd.DataFrame,
+        text_column: Optional[str] = 'text') -> pd.DataFrame:
+    dataframe[f'{text_column}_br'] = dataframe[text_column].apply(
+        lambda x: re.sub(
+            '[\u0020\n\u3000\u00A0\u0009\u000B\u000D\u2009\u200A\u202F]',
+            repl='<br>',
+            string=x
+        ).replace(
+            '、', '、<br>'
+        ).replace(
+            '。', '。<br>'
+        ).replace(
+            '！', '！<br>'
+        ).replace(
+            '？', '？<br>'
+        )
     )
     return dataframe
 

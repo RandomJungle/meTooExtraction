@@ -6,7 +6,6 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from dotenv import find_dotenv, load_dotenv
-from plotly.subplots import make_subplots
 from wordcloud import WordCloud
 
 from research import nlp
@@ -16,15 +15,13 @@ from utils.df_transform import (
     explode_lowered_hashtags,
     filter_hashtags_by_count,
     df_pipeline,
-    basic_pipeline
+    basic_pipeline, add_line_break_text_column
 )
 from utils.file_utils import read_json_dataframe
 
 
-load_dotenv(find_dotenv())
-
-
-def export_plotly_image(figure: go.Figure, output_path: str | None) -> None:
+def export_plotly_image(
+        figure: go.Figure, output_path: str | None) -> None:
     if output_path:
         if output_path.endswith('html'):
             figure.write_html(output_path)
@@ -34,7 +31,8 @@ def export_plotly_image(figure: go.Figure, output_path: str | None) -> None:
         figure.show()
 
 
-def define_width_and_height(output_path: str) -> Tuple[int | None, int | None]:
+def define_width_and_height(
+        output_path: str) -> Tuple[int | None, int | None]:
     """
     Define output image width and height according to output path
     """
@@ -308,18 +306,51 @@ def plot_average_metric_per_tweet_per_user(
     export_plotly_image(fig, output_path)
 
 
+def plot_tsne_scatter(
+        dataframe: pd.DataFrame,
+        embedding_column: str,
+        title: Optional[str] = None,
+        output_path: Optional[str] = None) -> None:
+    width, height = define_width_and_height(output_path)
+    fig = px.scatter(
+        dataframe,
+        x=f'{embedding_column}_x',
+        y=f'{embedding_column}_y',
+        color='reference_type',
+        width=width,
+        height=height,
+        title=title,
+        hover_name='user_username',
+        hover_data={
+            'created_at': True,
+            'reference_type': False,
+            f'{embedding_column}_x': False,
+            f'{embedding_column}_y': False,
+            'text_br': True,
+        }
+    )
+    export_plotly_image(fig, output_path)
+
+
 if __name__ == "__main__":
+
+    load_dotenv(find_dotenv())
 
     df = read_json_dataframe(
         file_path=os.environ.get('USERS_DATA_PATH'),
         remove_duplicates=True
     )
-    df = basic_pipeline(df)
-    plot_average_metric_per_tweet_per_user(
+    df = add_line_break_text_column(df)
+    mistral_model = 'mistral-embed'
+    openai_model = 'text-embedding-3-large'
+    model = openai_model
+    dim_red = 'umap'
+    plot_tsne_scatter(
         dataframe=df,
-        title='Mean metrics per tweet per user',
-        output_path=os.path.join(
-            os.environ.get('OUTPUT_PLOT_DIR'),
-            'avg_metrics_count_per_user_hist.png'
-        )
+        embedding_column=f'{dim_red}_{model}_embeddings',
+        title=f'{dim_red} scatter plot of {model} embeddings',
+        # output_path=os.path.join(
+        #     os.environ.get('OUTPUT_PLOT_DIR'),
+        #     'avg_metrics_count_per_user_hist.png'
+        # )
     )
