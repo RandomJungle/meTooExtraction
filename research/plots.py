@@ -323,19 +323,16 @@ def plot_tsne_scatter(
         custom_data=[
             'user_username',
             'created_at',
-            'text_br'
+            'text_br',
+            'text_en'
         ]
-        # hover_name='user_username',
-        # hover_data={
-        #     'created_at': True,
-        #     'reference_type': False,
-        #     f'{embedding_column}_x': False,
-        #     f'{embedding_column}_y': False,
-        #     'text_br': True,
-        # }
     )
     fig.update_traces(
-        hovertemplate='<b>%{customdata[0]}</b><br><br>Published : %{customdata[1]}<br><br>%{customdata[2]}'
+        hovertemplate=(
+            '<b>%{customdata[0]}</b><br><br>' +
+            'Published : %{customdata[1]|%Y-%m-%d}<br><br>' +
+            '%{customdata[2]}'
+        )
     )
     export_plotly_image(fig, output_path)
 
@@ -357,8 +354,8 @@ if __name__ == "__main__":
         dataframe=df,
         embedding_column=f'{dim_red}_{model}_embeddings',
         title=f'{dim_red} scatter plot of {model} embeddings',
-        # output_path=os.path.join(
-        #     os.environ.get('OUTPUT_PLOT_DIR'),
-        #     'avg_metrics_count_per_user_hist.png'
-        # )
+        output_path=os.path.join(
+            os.environ.get('OUTPUT_PLOT_DIR'),
+            'avg_metrics_count_per_user_hist.png'
+        )
     )

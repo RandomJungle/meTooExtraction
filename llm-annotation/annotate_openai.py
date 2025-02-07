@@ -94,7 +94,7 @@ def query_chat(
     output_dataframe = pd.concat(responses, ignore_index=True)
     merged = pd.merge(
         left=dataframe,
-        right=output_dataframe[['id', 'text_en']],
+        right=output_dataframe[prompt.get('output_columns')],
         on='id',
         how='left',
         validate='1:1'
@@ -123,7 +123,10 @@ if __name__ == '__main__':
         stream=True
     )
     output_df.to_json(
-        '/home/juliette/data/meToo_data/datasets/tweets_2017_2019_trad_openai.json',
+        os.path.join(
+            os.getenv('OUTPUT_DATASETS_DIR'),
+            'tweets_2017_2019_trad_openai.json'
+        ),
         orient='table'
     )
 

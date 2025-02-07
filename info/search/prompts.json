@@ -3,17 +3,30 @@
     "06-02-2025": {
       "content": "In the following table in json format, specified by the tags <t></t> there is a column \"text\" that contains texts in japanese, please add another column named 'text_en' with the english translation of these texts and return the table in json format, with only the 'id' and 'text_en' columns\n\ntable : ",
       "role": "You are a translator from japanese to english",
+      "output_columns": ["id", "text_en"],
       "comment": "english translation, first attempt"
     }
   },
   "sentiment_analysis": {
     "05-02-2025": {
-      "content": "In the following table in csv format, specified by the tags <t></t> there is a column \"text\" that contains tweets in japanese, please add another column with tags that represent the sentiment expressed by the text' from the following set of labels : {frustration, anger, sadness, shock, respect, shame, joy, humour} \n\ntable : ",
+      "content": "In the following table in csv format, specified by the tags <t></t> there is a column \"text\" that contains tweets in japanese, please add another column with tags that represent the sentiment expressed by the text from the following set of labels : {frustration, anger, sadness, shock, respect, shame, joy, humour} \n\ntable : ",
+      "output_columns": ["id", "sentiment"],
       "comment": "first test, disregard"
     },
     "06-02-2025": {
-      "content": "In the following table in csv format, specified by the tags <t></t> there is a column \"text\" that contains tweets in japanese, please add another column with tags that represent the sentiment expressed by the text' from the following set of labels : {frustration, anger, sadness, compassion, shame, joy, pain, fear, hope, disgust, solitude} \n\ntable : ",
+      "content": "In the following table in json format, specified by the tags <t></t> there is a column \"text\" that contains tweets in japanese, please add another column named 'sentiment' with tags that represent the sentiment expressed by the text, from the following set of labels : {frustration, anger, sadness, compassion, shame, joy, pain, fear, hope, disgust, solitude}. Return the table in json format, with only the 'id' and 'sentiment' columns \n\ntable : ",
+      "output_columns": ["id", "sentiment"],
       "comment": "Added exact annotation scheme"
+    },
+    "06-02-2025-22:30": {
+      "content": "In the following table in json format, specified by the tags <t></t> there is a column \"text\" that contains tweets in japanese, please add another column named 'sentiment' with tags that represent the sentiment expressed by the text, from the following set of labels : {frustration, anger, sadness, compassion, shame, joy, pain, fear, hope, disgust, solitude}. There can be more than one labels per tweet. Return the table in json format, with only the 'id' and 'sentiment' columns, as in the following example : [{'id': '123', 'sentiment': ['anger', 'sadness']}, {'id': '456', 'sentiment': ['hope', 'shame', 'compassion']}]  \n\ntable : ",
+      "output_columns": ["id", "sentiment"],
+      "comment": "Provided example to give more indication of expected output format"
+    },
+    "06-02-2025-22:36": {
+      "content": "In the following table in json format, specified by the tags <t></t> there is a column \"text\" that contains tweets in japanese, please add another column named 'sentiment' with tags that represent the sentiment expressed by the text, from the following set of labels : {'frustration', 'anger', 'sadness', 'compassion', 'shame', 'joy', 'pain', 'fear', 'hope', 'disgust', 'solitude'}. If the text of the tweet is neutral and/or simply informative without displaying any specific emotion, simply return an empty list []. There can be more than one labels per tweet. Return the table in json format, with only the 'id' and 'sentiment' columns, as in the following example : [{'id': '123', 'sentiment': ['anger', 'sadness']}, {'id': '456', 'sentiment': ['hope', 'shame', 'compassion']}]  \n\ntable : ",
+      "output_columns": ["id", "sentiment"],
+      "comment": "Added information about when there is no label (might need to create a 'neutral' category instead"
     }
   }
 }

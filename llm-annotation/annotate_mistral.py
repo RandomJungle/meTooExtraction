@@ -53,7 +53,7 @@ def query_chat(
         num_chunks: Optional[int] = 1,
         stream: Optional[bool] = False) -> pd.DataFrame:
 
-    data = dataframe[['id', 'text']]
+    data = dataframe[dataframe['retweet'] != True][['id', 'text']]
     if num_chunks <= 1:
         chunks = [data]
     else:
@@ -98,16 +98,14 @@ def query_chat(
         mini_df = pd.DataFrame.from_records(
             convert_content_to_json(content)
         )
-        print()
         responses.append(mini_df)
 
     output_dataframe = pd.concat(responses, ignore_index=True)
     merged = pd.merge(
         left=dataframe,
-        right=output_dataframe[['id', 'text_en']],
+        right=output_dataframe[prompt.get('output_columns')],
         on='id',
-        how='left',
-        validate='1:1'
+        how='left'
     )
     return merged
 
@@ -120,18 +118,23 @@ if __name__ == '__main__':
         file_path=os.environ.get('USERS_DATA_PATH'),
         remove_duplicates=True
     )
-    prompt_translate = read_prompt_file(
+    prompt = read_prompt_file(
         os.getenv('PROMPT_FILE_PATH'),
-        task='translate'
+        task='sentiment_analysis',
+        version='06-02-2025-22:36'
     )
     output_df = query_chat(
         dataframe=df,
-        prompt=prompt_translate,
-        num_chunks=45,
-        model_name='ministral-8b-latest',
+        prompt=prompt,
+        num_chunks=100,
+        model_name='mistral-large-latest',
+        temperature=0.1,
         stream=True
     )
     output_df.to_json(
-        '/home/juliette/data/meToo_data/datasets/tweets_2017_2019_trad_mistral.json',
+        os.path.join(
+            os.getenv('OUTPUT_DATASETS_DIR'),
+            'tweets_2017_2019_sent_mistral.json'
+        ),
         orient='table'
     )
