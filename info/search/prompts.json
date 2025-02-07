@@ -5,6 +5,12 @@
       "role": "You are a translator from japanese to english",
       "output_columns": ["id", "text_en"],
       "comment": "english translation, first attempt"
+    },
+    "07-02-2025": {
+      "content": "In the following table in json format, specified by the tags <t></t> there is a column \"text\" that contains texts in japanese, please add another column named 'text_en' with the english translation of these texts and return the table in json format, with only the 'id' and 'text_en' columns\n\ntable : ",
+      "role": "You are a seasoned translator of japanese with a speciality in the language of the internet",
+      "output_columns": ["id", "text_en"],
+      "comment": "extended the role"
     }
   },
   "sentiment_analysis": {

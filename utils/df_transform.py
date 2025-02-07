@@ -259,13 +259,16 @@ def chunk_dataframe(
     """
     Split dataframe into n chunks (mainly for LLM querying)
     """
-    rows_per_chunk = len(dataframe) // num_chunks
-    chunks = [
-        dataframe[i * rows_per_chunk:(i + 1) * rows_per_chunk]
-        for i in range(num_chunks)
-    ]
-    if len(dataframe) % num_chunks != 0:
-        chunks.append(dataframe[num_chunks * rows_per_chunk:])
+    if num_chunks <= 1:
+        chunks = [dataframe]
+    else:
+        rows_per_chunk = len(dataframe) // num_chunks
+        chunks = [
+            dataframe[i * rows_per_chunk:(i + 1) * rows_per_chunk]
+            for i in range(num_chunks)
+        ]
+        if len(dataframe) % num_chunks != 0:
+            chunks.append(dataframe[num_chunks * rows_per_chunk:])
     return chunks
 
 

@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from llm_utils import convert_content_to_json
 from utils.df_transform import chunk_dataframe
-from utils.file_utils import read_json_dataframe, read_json_file, read_prompt_file
+from utils.file_utils import read_json_dataframe, read_prompt_file
 
 
 def query_embeddings(
@@ -19,13 +19,12 @@ def query_embeddings(
         num_chunks: Optional[int] = 1) -> pd.DataFrame:
 
     data = dataframe[['id', 'text']]
-    if num_chunks <= 1:
-        chunks = [data]
-    else:
-        chunks = chunk_dataframe(data, num_chunks)
-    client = Mistral(api_key=os.getenv('MISTRAL_API_KEY', ''))
+    chunks = chunk_dataframe(data, num_chunks)
     outputs = []
 
+    client = Mistral(
+        api_key=os.getenv('MISTRAL_API_KEY', '')
+    )
     for chunk in tqdm(chunks):
         chunk_response = client.embeddings.create(
             model=model_name,
@@ -53,14 +52,13 @@ def query_chat(
         num_chunks: Optional[int] = 1,
         stream: Optional[bool] = False) -> pd.DataFrame:
 
-    data = dataframe[dataframe['retweet'] != True][['id', 'text']]
-    if num_chunks <= 1:
-        chunks = [data]
-    else:
-        chunks = chunk_dataframe(data, num_chunks)
+    data = dataframe[['id', 'text']]
+    chunks = chunk_dataframe(data, num_chunks)
     responses = []
 
-    client = Mistral(api_key=os.getenv('MISTRAL_API_KEY', ''))
+    client = Mistral(
+        api_key=os.getenv('MISTRAL_API_KEY', '')
+    )
 
     for chunk in tqdm(chunks):
         chunk_json = chunk.to_json(orient='records')
@@ -114,27 +112,29 @@ if __name__ == '__main__':
 
     load_dotenv(find_dotenv())
 
+    task = 'translate'
+    model = 'mistral-small-latest'
+
     df = read_json_dataframe(
         file_path=os.environ.get('USERS_DATA_PATH'),
         remove_duplicates=True
     )
-    prompt = read_prompt_file(
+    prompt_dict = read_prompt_file(
         os.getenv('PROMPT_FILE_PATH'),
-        task='sentiment_analysis',
-        version='06-02-2025-22:36'
+        task=task,
+        version='07-02-2025'
     )
     output_df = query_chat(
         dataframe=df,
-        prompt=prompt,
+        prompt=prompt_dict,
         num_chunks=100,
-        model_name='mistral-large-latest',
-        temperature=0.1,
+        model_name=model,
         stream=True
     )
     output_df.to_json(
         os.path.join(
             os.getenv('OUTPUT_DATASETS_DIR'),
-            'tweets_2017_2019_sent_mistral.json'
+            f'tweets_2017_2019_{task}_{model}.json'
         ),
         orient='table'
     )

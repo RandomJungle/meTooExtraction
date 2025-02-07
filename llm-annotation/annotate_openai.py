@@ -1,7 +1,6 @@
 import os
 from typing import Optional, Dict
 
-import numpy as np
 import pandas as pd
 from dotenv import load_dotenv, find_dotenv
 from openai import OpenAI
@@ -50,10 +49,7 @@ def query_chat(
         stream: Optional[bool] = False) -> pd.DataFrame:
 
     data = dataframe[['id', 'text']]
-    if num_chunks <= 1:
-        chunks = [data]
-    else:
-        chunks = chunk_dataframe(data, num_chunks)
+    chunks = chunk_dataframe(data, num_chunks)
     responses = []
 
     client = OpenAI(
@@ -106,26 +102,29 @@ if __name__ == '__main__':
 
     load_dotenv(find_dotenv())
 
+    task = 'translate'
+    model = 'gpt-4o-2024-11-20'
+
     df = read_json_dataframe(
         file_path=os.environ.get('USERS_DATA_PATH'),
         remove_duplicates=False
     )
     prompt_translate = read_prompt_file(
         os.getenv('PROMPT_FILE_PATH'),
-        task='translate'
+        task=task
     )
     output_df = query_chat(
         dataframe=df,
         prompt=prompt_translate,
         num_chunks=100,
-        model_name='gpt-4o-mini',
+        model_name=model,
         temperature=0.3,
         stream=True
     )
     output_df.to_json(
         os.path.join(
             os.getenv('OUTPUT_DATASETS_DIR'),
-            'tweets_2017_2019_trad_openai.json'
+            f'tweets_2017_2019_{task}_{model}.json'
         ),
         orient='table'
     )
