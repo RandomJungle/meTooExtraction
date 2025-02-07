@@ -106,7 +106,7 @@ if __name__ == '__main__':
     model = 'gpt-4o-2024-11-20'
 
     df = read_json_dataframe(
-        file_path=os.environ.get('USERS_DATA_PATH'),
+        file_path=os.environ.get('LATEST_DATASET_PATH'),
         remove_duplicates=False
     )
     prompt_translate = read_prompt_file(

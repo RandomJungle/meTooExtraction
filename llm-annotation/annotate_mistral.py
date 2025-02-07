@@ -113,10 +113,10 @@ if __name__ == '__main__':
     load_dotenv(find_dotenv())
 
     task = 'translate'
-    model = 'mistral-small-latest'
+    model = 'mistral-large-latest'
 
     df = read_json_dataframe(
-        file_path=os.environ.get('USERS_DATA_PATH'),
+        file_path=os.environ.get('LATEST_DATASET_PATH'),
         remove_duplicates=True
     )
     prompt_dict = read_prompt_file(

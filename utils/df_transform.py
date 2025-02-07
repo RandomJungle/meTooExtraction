@@ -272,24 +272,46 @@ def chunk_dataframe(
     return chunks
 
 
+def replace_punctuation_with_line_break(text: str) -> str:
+    return text.replace(
+        '、', '、<br>'
+    ).replace(
+        '。', '。<br>'
+    ).replace(
+        '！', '！<br>'
+    ).replace(
+        '？', '？<br>'
+    ).replace(
+        ',', ',<br>'
+    ).replace(
+        '.', '.<br>'
+    ).replace(
+        '!', '!<br>'
+    ).replace(
+        '?', '?<br>'
+    )
+
+
 def add_line_break_text_column(
         dataframe: pd.DataFrame,
-        text_column: Optional[str] = 'text') -> pd.DataFrame:
-    dataframe[f'{text_column}_br'] = dataframe[text_column].apply(
-        lambda x: re.sub(
-            '[\u0020\n\u3000\u00A0\u0009\u000B\u000D\u2009\u200A\u202F]',
-            repl='<br>',
-            string=x
-        ).replace(
-            '、', '、<br>'
-        ).replace(
-            '。', '。<br>'
-        ).replace(
-            '！', '！<br>'
-        ).replace(
-            '？', '？<br>'
+        text_column: Optional[str] = 'text',
+        language: Optional[str] = 'JA') -> pd.DataFrame:
+    if language.lower() == 'ja':
+        dataframe[f'{text_column}_br'] = dataframe[text_column].apply(
+            lambda x: replace_punctuation_with_line_break(
+                re.sub(
+                    '[\u0020\n\u3000\u00A0\u0009\u000B\u000D\u2009\u200A\u202F]',
+                    repl='<br>',
+                    string=x
+                )
+            )
         )
-    )
+    else:
+        dataframe[f'{text_column}_br'] = dataframe[text_column].apply(
+            lambda x: replace_punctuation_with_line_break(
+                x.replace('\n', '<br>')
+            )
+        )
     return dataframe
 
 
@@ -298,11 +320,14 @@ if __name__ == '__main__':
     load_dotenv(find_dotenv())
 
     df = read_json_dataframe(
-        file_path=os.environ.get('USERS_DATA_PATH'),
+        file_path=os.environ.get('LATEST_DATASET_PATH'),
         remove_duplicates=True
     )
-    df = tweet_per_user_per_month_table(df)
-    df.to_csv(
-        'tweet_per_user_per_month_table.csv',
-        index=True
+    df1 = basic_pipeline(df)
+    df.to_json(
+        os.path.join(
+            os.environ.get('DATASETS_DIR_PATH'),
+            'test.json'
+        ),
+        orient='table'
     )

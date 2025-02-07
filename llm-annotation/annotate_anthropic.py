@@ -86,7 +86,7 @@ if __name__ == '__main__':
     model = 'claude-3-sonnet-20240229'
 
     df = read_json_dataframe(
-        file_path=os.environ.get('USERS_DATA_PATH'),
+        file_path=os.environ.get('LATEST_DATASET_PATH'),
         remove_duplicates=False
     )
     prompt_translate = read_prompt_file(

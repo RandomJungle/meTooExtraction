@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import os
-from typing import Callable, Optional, Tuple, List
+from typing import Optional, Tuple
 
 import pandas as pd
 import plotly.express as px
@@ -8,14 +8,13 @@ import plotly.graph_objects as go
 from dotenv import find_dotenv, load_dotenv
 from wordcloud import WordCloud
 
-from research import nlp
+from research.nlp import tokenize_tweets_df
 from utils.df_transform import (
     add_month_column,
     add_hashtags_column,
     explode_lowered_hashtags,
     filter_hashtags_by_count,
     df_pipeline,
-    basic_pipeline, add_line_break_text_column
 )
 from utils.file_utils import read_json_dataframe
 
@@ -69,12 +68,14 @@ def word_cloud_from_tokenized_text(
 
 
 def plot_word_cloud(
-        data_path: str,
-        figure_name: str,
-        filter_function: Callable = None) -> None:
-    text = nlp.tokenize_all_tweet_texts(
-        data_path, os.environ.get('JAPANESE_STOP_WORDS'), "text", filter_function)
-    word_cloud_from_tokenized_text(text, figure_name)
+        dataframe: pd.DataFrame,
+        output_path: Optional[str] = None) -> None:
+    if not 'tokens_filtered' in dataframe.columns:
+        dataframe = tokenize_tweets_df(
+            dataframe=dataframe
+        )
+    text = ' '.join(dataframe['tokens_filtered'].tolist())
+    word_cloud_from_tokenized_text(text, output_path)
 
 
 def plot_tweet_count_per_month_histogram(
@@ -309,6 +310,7 @@ def plot_average_metric_per_tweet_per_user(
 def plot_tsne_scatter(
         dataframe: pd.DataFrame,
         embedding_column: str,
+        color_column: Optional[str] = None,
         title: Optional[str] = None,
         output_path: Optional[str] = None) -> None:
     width, height = define_width_and_height(output_path)
@@ -316,7 +318,7 @@ def plot_tsne_scatter(
         dataframe,
         x=f'{embedding_column}_x',
         y=f'{embedding_column}_y',
-        color='reference_type',
+        color=color_column,
         width=width,
         height=height,
         title=title,
@@ -324,14 +326,16 @@ def plot_tsne_scatter(
             'user_username',
             'created_at',
             'text_br',
-            'text_en'
-        ]
+            'text_en_br'
+        ],
+        color_discrete_sequence=px.colors.qualitative.G10 + px.colors.qualitative.Vivid,
     )
     fig.update_traces(
         hovertemplate=(
             '<b>%{customdata[0]}</b><br><br>' +
             'Published : %{customdata[1]|%Y-%m-%d}<br><br>' +
-            '%{customdata[2]}'
+            '%{customdata[2]}<br><br>' +
+            '%{customdata[3]}'
         )
     )
     export_plotly_image(fig, output_path)
@@ -342,20 +346,30 @@ if __name__ == "__main__":
     load_dotenv(find_dotenv())
 
     df = read_json_dataframe(
-        file_path=os.environ.get('USERS_DATA_PATH'),
+        file_path=os.environ.get('LATEST_DATASET_PATH'),
         remove_duplicates=True
     )
-    df = add_line_break_text_column(df)
-    mistral_model = 'mistral-embed'
-    openai_model = 'text-embedding-3-large'
-    model = mistral_model
-    dim_red = 'umap'
-    plot_tsne_scatter(
-        dataframe=df,
-        embedding_column=f'{dim_red}_{model}_embeddings',
-        title=f'{dim_red} scatter plot of {model} embeddings',
-        output_path=os.path.join(
-            os.environ.get('OUTPUT_PLOT_DIR'),
-            'avg_metrics_count_per_user_hist.png'
-        )
+    df = tokenize_tweets_df(
+        dataframe=df
     )
+    df.to_json(
+        os.path.join(
+            os.environ.get('DATASETS_DIR_PATH'),
+            'tweets_2017_2019_tokens.json'
+        ),
+        orient='table'
+    )
+    plot_word_cloud(df, '/home/juliette/data/meToo_data/plots/wordcloud_total.png')
+    # mistral_model = 'mistral-embed'
+    # openai_model = 'text-embedding-3-large'
+    # model = mistral_model
+    # dim_red = 'umap'
+    # plot_tsne_scatter(
+    #     dataframe=df,
+    #     embedding_column=f'{dim_red}_{model}_embeddings',
+    #     title=f'{dim_red} scatter plot of {model} embeddings',
+    #     # output_path=os.path.join(
+    #     #     os.environ.get('OUTPUT_PLOT_DIR'),
+    #     #     'avg_metrics_count_per_user_hist.png'
+    #     # )
+    # )

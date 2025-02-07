@@ -1,11 +1,14 @@
 import json
 import re
+
+import pandas as pd
 import spacy
 
-from typing import Callable, List
+from typing import Callable, List, Tuple
 from spacy.matcher import Matcher
 from tqdm import tqdm
 
+from research.stopwords import japanese_stopwords
 from utils.file_utils import read_corpus_generator
 
 
@@ -15,28 +18,36 @@ def analyze_tweet_generator(input_data_path, model):
         yield nlp(tweet.get('text'))
 
 
-def tokenize_all_tweet_texts(
-        data_path: str,
-        stopword_path: str,
-        text_key: str = "text",
-        filter_function: Callable = None):
+def tokenize_tweet(
+        row: pd.Series,
+        model: spacy.Language,
+        text_column: str) -> Tuple[List[str], List[str]]:
     # keeping only 'NOUN', ' VERB', 'ADV', 'PROPN', 'ADJ', 'PART', 'NOUN|Polarity=Neg'
     forbidden_pos = [
-        'SCONJ', 'PUNCT', 'DET', 'NUM', 'PRON', 'CCONJ', 'SYM', 'SCONJ|Polarity=Neg', 'ADP', 'AUX', 'SPACE'
+        'SCONJ', 'PUNCT', 'DET', 'NUM', 'PRON', 'CCONJ',
+        'SYM', 'SCONJ|Polarity=Neg', 'ADP', 'AUX', 'SPACE'
     ]
     words_to_keep = ['嫌がらせ', '歳']
-    with open(stopword_path, 'r') as stopword_file:
-        stopwords = [line.strip() for line in stopword_file.readlines()]
+    doc = model(row[text_column])
+    tokens = [token.text for token in doc]
+    filtered_tokens = [
+        token.text for token in doc
+        if token.text not in japanese_stopwords
+           and (token.pos_ not in forbidden_pos or token.text in words_to_keep)
+    ]
+    return tokens, filtered_tokens
+
+
+def tokenize_tweets_df(
+        dataframe: pd.DataFrame,
+        text_column: str = 'text',
+        tokens_column: str = 'tokens'):
     nlp = spacy.load('ja_core_news_trf')
-    texts = []
-    for tweet in tqdm(read_corpus_generator(data_path)):
-        if (filter_function and filter_function(tweet)) or not filter_function:
-            if tweet.get('labels').get('category') == 'testimony':
-                doc = nlp(tweet.get(text_key))
-                texts.append(" ".join([token.text for token in doc
-                                       if token.text not in stopwords
-                                       and (token.pos_ not in forbidden_pos or token.text in words_to_keep)]))
-    return " ".join(texts)
+    dataframe[[tokens_column, f'{tokens_column}_filtered']] = dataframe.apply(
+        lambda row: tokenize_tweet(row, nlp, text_column),
+        index=0
+    )
+    return dataframe
 
 
 def list_words_per_morpho_tag(data_path: str, text_key: str = "text", hard_limit: int = None):
