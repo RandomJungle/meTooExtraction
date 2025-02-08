@@ -70,22 +70,26 @@ def umap_dimensionality_reduction(
 def agglomerative_clustering(
         dataframe: pd.DataFrame,
         embeddings_column: str,
-        n_clusters: Optional[int] = 10) -> Tuple[pd.DataFrame, AgglomerativeClustering]:
+        n_clusters: Optional[int] = 10,
+        distance_threshold: Optional[int] = None) -> Tuple[pd.DataFrame, AgglomerativeClustering]:
     model = AgglomerativeClustering(
-        n_clusters=None,
+        n_clusters=n_clusters,
         metric='euclidean',
         memory=None,
         connectivity=None,
         compute_full_tree='auto',
         linkage='ward',
-        distance_threshold=(dist := 3),
+        distance_threshold=distance_threshold,
         compute_distances=False
     )
     embeddings = dataframe[embeddings_column].to_list()
     clustering_labels = model.fit_predict(np.array(embeddings))
     clustering_labels = [str(label) for label in clustering_labels]
-    print(f"Number of labels : {len(set(clustering_labels))} with distance threshold : {dist}")
-    dataframe[f'clustering_agglo_{n_clusters}'] = clustering_labels
+    if not n_clusters:
+        column_name = f'clustering_agglo_dist{distance_threshold}'
+    else:
+        column_name = f'clustering_agglo_{n_clusters}'
+    dataframe[column_name] = clustering_labels
     return dataframe, model
 
 

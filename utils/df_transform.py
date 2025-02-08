@@ -3,6 +3,7 @@ import re
 from functools import reduce
 from typing import List, Optional, Dict
 
+import numpy as np
 import pandas as pd
 from dotenv import load_dotenv, find_dotenv
 
@@ -315,6 +316,25 @@ def add_line_break_text_column(
     return dataframe
 
 
+def extract_urls(entities: float | Dict[str, List[Dict]]) -> float | List[str]:
+    if not entities or isinstance(entities, float):
+        return np.NaN
+    urls = entities.get('urls')
+    if not urls:
+        return np.NaN
+    long_urls = [url.get('expanded_url') for url in urls]
+    return [url for url in long_urls if not url.startswith('https://twitter')]
+
+
+def add_full_urls_column(
+        dataframe: pd.DataFrame,
+        url_column: Optional[str] = 'entities'):
+    dataframe['urls'] = dataframe[url_column].apply(
+        lambda x: extract_urls(x)
+    )
+    return dataframe
+
+
 if __name__ == '__main__':
 
     load_dotenv(find_dotenv())
@@ -323,11 +343,11 @@ if __name__ == '__main__':
         file_path=os.environ.get('LATEST_DATASET_PATH'),
         remove_duplicates=True
     )
-    df1 = basic_pipeline(df)
+    df = add_full_urls_column(df)
     df.to_json(
         os.path.join(
             os.environ.get('DATASETS_DIR_PATH'),
-            'test.json'
+            'tweets_2017_2019_url.json'
         ),
         orient='table'
     )

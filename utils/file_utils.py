@@ -5,6 +5,7 @@ import chardet
 import json
 import os
 
+import pdfplumber
 import pandas as pd
 from tqdm import tqdm
 
@@ -173,3 +174,20 @@ def write_tweets_to_csv(output_path: str, tweets: List[Dict]):
         writer.writeheader()
         for tweet in tweets:
             writer.writerow(tweet)
+
+
+def convert_pdf2txt(pdf_path: str):
+    texts = []
+    with pdfplumber.open(pdf_path) as pdf_file:
+        for page in pdf_file.pages:
+            texts.append(page.extract_text())
+    return ('\n' * 10).join(texts)
+
+
+def read_pdf_bibliography(bibliography_path: str):
+    bibliography = dict()
+    for file_name in os.listdir(bibliography_path):
+        bibliography[file_name] = convert_pdf2txt(
+            pdf_path=os.path.join(bibliography_path, file_name)
+        )
+    return bibliography

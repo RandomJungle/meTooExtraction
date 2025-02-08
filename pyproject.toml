@@ -24,6 +24,7 @@ openai = "^1.61.1"
 scikit-learn = "^1.6.1"
 umap-learn = "^0.5.7"
 anthropic = "^0.45.2"
+pdfplumber = "^0.11.5"
 
 
 [build-system]

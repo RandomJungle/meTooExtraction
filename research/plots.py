@@ -1,6 +1,8 @@
+from collections import OrderedDict
+
 import matplotlib.pyplot as plt
 import os
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List, Dict
 
 import pandas as pd
 import plotly.express as px
@@ -9,7 +11,7 @@ from dotenv import find_dotenv, load_dotenv
 from wordcloud import WordCloud
 
 from research.clustering import agglomerative_clustering, kmeans_clustering
-from research.nlp import tokenize_tweets_df
+from research.nlp import tokenize_tweets_df, tf_idf_clusters
 from utils.df_transform import (
     add_month_column,
     add_hashtags_column,
@@ -76,8 +78,7 @@ def plot_word_clouds_clusters(
         dataframe: pd.DataFrame,
         cluster_labels_column: str,
         output_path: Optional[str] = None) -> None:
-    # plt.rcParams["font.family"] = "Noto Sans CJK JP"
-    plt.figure()
+    plt.figure(figsize=(8, 10))
     if not 'tokens_filtered' in dataframe.columns:
         dataframe = tokenize_tweets_df(
             dataframe=dataframe
@@ -96,13 +97,16 @@ def plot_word_clouds_clusters(
             font_path=os.environ.get('JAPANESE_FONT_PATH'),
             background_color="white",
             max_font_size=200,
-            # width=800,
-            # height=400
+            width=1200,
+            height=400
         ).generate(text)
         ax.imshow(wordcloud, interpolation="bilinear")
         ax.axis("off")
         ax.title.set_text(f'Cluster n° {cluster_label}')
-    plt.show()
+    if output_path:
+        plt.savefig(output_path)
+    else:
+        plt.show()
 
 
 def plot_tweet_count_per_month_histogram(
@@ -368,27 +372,83 @@ def plot_tsne_scatter(
     export_plotly_image(fig, output_path)
 
 
+def plot_tf_idf_cluster_table(
+        dataframe: pd.DataFrame,
+        tokens_column: Optional[str] = 'tokens',
+        cluster_labels_column: Optional[str] = 'labels',
+        max_terms: Optional[int] = None) -> None:
+    tf_idf_matrix = tf_idf_clusters(
+        dataframe=dataframe,
+        cluster_labels_column=cluster_labels_column,
+        tokens_column=tokens_column,
+        max_terms=max_terms
+    )
+    tf_idf_matrix_ordered = OrderedDict(
+        sorted(
+            [(key, value) for key, value in tf_idf_matrix.items()],
+            key=lambda x: int(x[0])
+        )
+    )
+    values = [
+        [key for key in tf_idf_matrix_ordered.keys()],
+        [
+            ', '.join([
+                f'{top_term[0]} ({round(top_term[1], 2)})'
+                for top_term in cluster_top_terms])
+                for cluster_top_terms in tf_idf_matrix_ordered.values()
+        ]
+    ]
+    fig = go.Figure(
+        data=[
+            go.Table(
+                columnorder=[1, 2],
+                columnwidth=[80, 400],
+                header=dict(
+                    values=[
+                        ['<b>CLUSTER</b>'],
+                        ['<b>TOP TERMS ASSOCIATED (TF-IDF adjusted for document length)</b>']
+                    ],
+                    line_color='darkslategray',
+                    fill_color='royalblue',
+                    align=['left', 'center'],
+                    font=dict(color='white', size=12),
+                    height=40
+                ),
+                cells=dict(
+                    values=values,
+                    line_color='darkslategray',
+                    fill=dict(color=['paleturquoise', 'white']),
+                    align=['left', 'center'],
+                    font_size=12,
+                    height=30)
+            )
+        ]
+    )
+    fig.show()
+
+
 if __name__ == "__main__":
 
     load_dotenv(find_dotenv())
 
-    num_clusters = 8
+    distance = 3
 
     df = read_json_dataframe(
         file_path=os.environ.get('LATEST_DATASET_PATH'),
         remove_duplicates=True
     )
-    df, _ = kmeans_clustering(
+    df, _ = agglomerative_clustering(
         dataframe=df,
         embeddings_column='mistral-embed_embeddings',
-        n_clusters=num_clusters
+        n_clusters=None,
+        distance_threshold=distance
     )
     plot_word_clouds_clusters(
-        df,
-        cluster_labels_column=f'clustering_kmeans_{num_clusters}',
+        dataframe=df,
+        cluster_labels_column=f'clustering_agglo_dist{distance}',
         output_path=os.path.join(
             os.getenv('PLOT_DIR_PATH'),
-            'wordcloud_total.png'
+            'wordcloud_clusters.png'
         )
     )
     # mistral_model = 'mistral-embed'

@@ -4,6 +4,7 @@ import re
 from collections import Counter
 from math import log
 
+import numpy as np
 import pandas as pd
 import spacy
 
@@ -13,7 +14,7 @@ from dotenv import load_dotenv, find_dotenv
 from spacy.matcher import Matcher
 from tqdm import tqdm
 
-from research.clustering import kmeans_clustering
+from research.clustering import kmeans_clustering, agglomerative_clustering
 from research.stopwords import japanese_stopwords
 from utils.file_utils import read_corpus_generator, read_json_dataframe
 
@@ -135,9 +136,10 @@ def get_end_offset(start_position, end_position, doc):
 
 
 def tf_idf(
-        documents: Dict[str, List[str]],
-        max_terms: Optional[int] = 10):
+        documents: Dict[str, str],
+        max_terms: Optional[int] = 10) -> Dict[str, List[Tuple[str, float]]]:
     n_documents = len(documents)
+    tf_idf_dict = dict()
     for cluster_name, document in documents.items():
         terms = document.split(' ')
         max_term_freq = sorted(
@@ -162,7 +164,41 @@ def tf_idf(
             reverse=True,
             key=lambda x: x[1]
         )[:max_terms+1]
-        print(f'Cluster {cluster_name} : {top_terms}')
+        tf_idf_dict.update({cluster_name: top_terms})
+    return tf_idf_dict
+
+
+def tf_idf_clusters(
+        dataframe: pd.DataFrame,
+        cluster_labels_column: str,
+        tokens_column: str,
+        max_terms: Optional[int] = None) -> Dict[str, List[Tuple[str, float]]]:
+    dataframe[f'{tokens_column}_str'] = dataframe[tokens_column].apply(
+        lambda x: ' '.join(x)
+    )
+    dataframe[cluster_labels_column] = dataframe[cluster_labels_column].astype('category')
+    unique_labels = set(dataframe[cluster_labels_column].cat.categories)
+    clusters = dict()
+    for label in unique_labels:
+        cluster_subset = dataframe[dataframe[cluster_labels_column] == label]
+        text = ' '.join(cluster_subset[f'{tokens_column}_str'].tolist())
+        clusters[label] = text
+    return tf_idf(
+        documents=clusters,
+        max_terms=max_terms
+    )
+
+
+def convert_tf_idf_dict_to_dataframe(
+        tf_idf_dict: Dict[str, List[Tuple[str, float]]]) -> pd.DataFrame:
+    tf_idf_dict_padded = {
+        f'Cluster {key}': [f'{v[0]} ({round(v[1], 2)})' for v in value] +
+                          [np.nan] * (max([len(v) for v in tf_idf_matrix.values()]) - len(value))
+        for key, value in tf_idf_dict.items()
+    }
+    dataframe = pd.DataFrame.from_records(tf_idf_dict_padded)
+    return dataframe
+
 
 
 if __name__ == "__main__":
@@ -175,21 +211,22 @@ if __name__ == "__main__":
         file_path=os.environ.get('LATEST_DATASET_PATH'),
         remove_duplicates=True
     )
-    df, _ = kmeans_clustering(
+    df, _ = agglomerative_clustering(
         dataframe=df,
         embeddings_column='mistral-embed_embeddings',
-        n_clusters=n_clusters
+        distance_threshold=3,
+        n_clusters=None
     )
-    df['tokens_str'] = df['tokens'].apply(
-        lambda x: ' '.join(x)
+    tf_idf_matrix = tf_idf_clusters(
+        dataframe=df,
+        cluster_labels_column=f'clustering_agglo_dist3',
+        tokens_column='tokens_filtered',
+        max_terms=20
     )
-    texts = []
-    cluster_labels_column = f'clustering_kmeans_{n_clusters}'
-    df[cluster_labels_column] = df[cluster_labels_column].astype('category')
-    unique_labels = set(df[cluster_labels_column].cat.categories)
-    clusters = dict()
-    for label in unique_labels:
-        cluster_subset = df[df[cluster_labels_column] == label]
-        text = ' '.join(cluster_subset['tokens_str'].tolist())
-        clusters[label] = text
-    tf_idf_matrix = tf_idf(clusters)
+    tf_idf_dataframe = convert_tf_idf_dict_to_dataframe(tf_idf_matrix)
+    tf_idf_dataframe.to_csv(
+        os.path.join(
+            os.getenv('TABLES_DIR_PATH'),
+            'agglomerative_clustering_dist3_clusters_top_terms.csv'
+        )
+    )

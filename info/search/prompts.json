@@ -1,38 +1,66 @@
 {
-  "translate": {
-    "06-02-2025": {
+  "translation": {
+    "1.0": {
       "content": "In the following table in json format, specified by the tags <t></t> there is a column \"text\" that contains texts in japanese, please add another column named 'text_en' with the english translation of these texts and return the table in json format, with only the 'id' and 'text_en' columns\n\ntable : ",
       "role": "You are a translator from japanese to english",
       "output_columns": ["id", "text_en"],
-      "comment": "english translation, first attempt"
+      "comment": "english translation, first attempt",
+      "creation_date": "06-02-2025"
     },
-    "07-02-2025": {
+    "1.1": {
       "content": "In the following table in json format, specified by the tags <t></t> there is a column \"text\" that contains texts in japanese, please add another column named 'text_en' with the english translation of these texts and return the table in json format, with only the 'id' and 'text_en' columns\n\ntable : ",
       "role": "You are a seasoned translator of japanese with a speciality in the language of the internet",
       "output_columns": ["id", "text_en"],
-      "comment": "extended the role"
+      "comment": "extended the role",
+      "creation_date": "07-02-2025"
     }
   },
   "sentiment_analysis": {
-    "05-02-2025": {
+    "1.0": {
       "content": "In the following table in csv format, specified by the tags <t></t> there is a column \"text\" that contains tweets in japanese, please add another column with tags that represent the sentiment expressed by the text from the following set of labels : {frustration, anger, sadness, shock, respect, shame, joy, humour} \n\ntable : ",
       "output_columns": ["id", "sentiment"],
-      "comment": "first test, disregard"
+      "comment": "first test, disregard",
+      "creation_date": "05-02-2025"
     },
-    "06-02-2025": {
+    "1.1": {
       "content": "In the following table in json format, specified by the tags <t></t> there is a column \"text\" that contains tweets in japanese, please add another column named 'sentiment' with tags that represent the sentiment expressed by the text, from the following set of labels : {frustration, anger, sadness, compassion, shame, joy, pain, fear, hope, disgust, solitude}. Return the table in json format, with only the 'id' and 'sentiment' columns \n\ntable : ",
       "output_columns": ["id", "sentiment"],
-      "comment": "Added exact annotation scheme"
+      "comment": "Added exact annotation scheme",
+      "creation_date": "06-02-2025"
     },
-    "06-02-2025-22:30": {
+    "1.2": {
       "content": "In the following table in json format, specified by the tags <t></t> there is a column \"text\" that contains tweets in japanese, please add another column named 'sentiment' with tags that represent the sentiment expressed by the text, from the following set of labels : {frustration, anger, sadness, compassion, shame, joy, pain, fear, hope, disgust, solitude}. There can be more than one labels per tweet. Return the table in json format, with only the 'id' and 'sentiment' columns, as in the following example : [{'id': '123', 'sentiment': ['anger', 'sadness']}, {'id': '456', 'sentiment': ['hope', 'shame', 'compassion']}]  \n\ntable : ",
       "output_columns": ["id", "sentiment"],
-      "comment": "Provided example to give more indication of expected output format"
+      "comment": "Provided example to give more indication of expected output format",
+      "creation_date": "06-02-2025"
     },
-    "06-02-2025-22:36": {
+    "1.3": {
       "content": "In the following table in json format, specified by the tags <t></t> there is a column \"text\" that contains tweets in japanese, please add another column named 'sentiment' with tags that represent the sentiment expressed by the text, from the following set of labels : {'frustration', 'anger', 'sadness', 'compassion', 'shame', 'joy', 'pain', 'fear', 'hope', 'disgust', 'solitude'}. If the text of the tweet is neutral and/or simply informative without displaying any specific emotion, simply return an empty list []. There can be more than one labels per tweet. Return the table in json format, with only the 'id' and 'sentiment' columns, as in the following example : [{'id': '123', 'sentiment': ['anger', 'sadness']}, {'id': '456', 'sentiment': ['hope', 'shame', 'compassion']}]  \n\ntable : ",
       "output_columns": ["id", "sentiment"],
-      "comment": "Added information about when there is no label (might need to create a 'neutral' category instead"
+      "comment": "Added information about when there is no label (might need to create a 'neutral' category instead",
+      "creation_date": "06-02-2025"
+    }
+  },
+  "documents_summary": {
+    "1.0": {
+      "role": "You are a french sociologist working on Japanese society and redacting the State-Of-The-Art of their next publication",
+      "content": "Summarize, in french, the research article provided between the tags <doc></doc> and outline the main ideas that are developed by the article, \n\ndocument : ",
+      "comment": "first test",
+      "creation_date": "08-02-2025"
+    }
+  },
+  "SOTA": {
+    "1.0": {
+      "role": "You are a french sociologist working on Japanese society and redacting the State-Of-The-Art of their next publication",
+      "content": "Redact, in french, the State-Of-The-Art of a research article of sociology, based on the article summaries provided below. You will extract a succinct vision, mixing ideas as much as possible instead of presenting a vision article by article :\n\n\n",
+      "comment": "first test",
+      "creation_date": "08-02-2025"
+    },
+    "1.1": {
+      "role": "You are a french sociologist working on Japanese society and redacting the State-Of-The-Art of their next publication",
+      "content": "Redact, in french, the State-Of-The-Art of a research article of sociology, based on the article summaries provided below. The subject of the article is: the MeToo movement on Twitter in Japan, and it revolves around themes of sexual violence, feminism, militant discourse, social norms and political responses to societal problems. You will extract a succinct vision, mixing ideas as much as possible instead of presenting a vision article by article :\n\n\n",
+      "comment": "first test",
+      "creation_date": "08-02-2025"
     }
   }
 }
