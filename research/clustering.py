@@ -6,11 +6,14 @@ import pandas as pd
 from dotenv import load_dotenv, find_dotenv
 from matplotlib import pyplot as plt
 from scipy.cluster.hierarchy import dendrogram
-from sklearn.cluster import AgglomerativeClustering
+from sklearn.cluster import (
+    AgglomerativeClustering,
+    KMeans,
+    BisectingKMeans
+)
 from sklearn.manifold import TSNE
 from umap import UMAP
 
-from research.plots import plot_tsne_scatter
 from utils.file_utils import read_json_dataframe
 
 
@@ -86,6 +89,20 @@ def agglomerative_clustering(
     return dataframe, model
 
 
+def kmeans_clustering(
+        dataframe: pd.DataFrame,
+        embeddings_column: str,
+        n_clusters: Optional[int] = 10) -> Tuple[pd.DataFrame, KMeans]:
+    model = KMeans(
+        n_clusters=n_clusters
+    )
+    embeddings = dataframe[embeddings_column].to_list()
+    clustering_labels = model.fit_predict(np.array(embeddings))
+    clustering_labels = [str(label) for label in clustering_labels]
+    dataframe[f'clustering_kmeans_{n_clusters}'] = clustering_labels
+    return dataframe, model
+
+
 if __name__ == '__main__':
 
     load_dotenv(find_dotenv())
@@ -98,18 +115,8 @@ if __name__ == '__main__':
         dataframe=df,
         embeddings_column='mistral-embed_embeddings'
     )
-    plt.title("Hierarchical Clustering Dendrogram")
 
-    mistral_model = 'mistral-embed'
-    openai_model = 'text-embedding-3-large'
-    model = mistral_model
-    dim_red = 'umap'
-    # plot the top three levels of the dendrogram
+    plt.title("Hierarchical Clustering Dendrogram")
     plot_dendrogram(clustering_model, truncate_mode="level", p=5)
     plt.xlabel("Number of points in node (or index of point if no parenthesis).")
     plt.show()
-    plot_tsne_scatter(
-        dataframe=df,
-        embedding_column=f'{dim_red}_{model}_embeddings',
-        color_column='clustering_agglo_10'
-    )

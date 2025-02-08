@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 from dotenv import find_dotenv, load_dotenv
 from wordcloud import WordCloud
 
+from research.clustering import agglomerative_clustering, kmeans_clustering
 from research.nlp import tokenize_tweets_df
 from utils.df_transform import (
     add_month_column,
@@ -44,16 +45,6 @@ def define_width_and_height(
 
 def word_cloud_from_tokenized_text(
         text: str, output_path: str) -> None:
-    """
-    Creates a wordcloud from raw text
-
-    Args:
-        text: raw text
-        output_path: full path to save figure to
-
-    Returns:
-        None, save to file
-    """
     plt.rcParams["font.family"] = "Noto Sans CJK JP"
     wordcloud = WordCloud(
         font_path=os.environ.get('JAPANESE_FONT_PATH'),
@@ -74,8 +65,44 @@ def plot_word_cloud(
         dataframe = tokenize_tweets_df(
             dataframe=dataframe
         )
-    text = ' '.join(dataframe['tokens_filtered'].tolist())
+    dataframe['tokens_s'] = dataframe['tokens_filtered'].apply(
+        lambda x: ' '.join(x)
+    )
+    text = ' '.join(dataframe['tokens_s'].tolist())
     word_cloud_from_tokenized_text(text, output_path)
+
+
+def plot_word_clouds_clusters(
+        dataframe: pd.DataFrame,
+        cluster_labels_column: str,
+        output_path: Optional[str] = None) -> None:
+    # plt.rcParams["font.family"] = "Noto Sans CJK JP"
+    plt.figure()
+    if not 'tokens_filtered' in dataframe.columns:
+        dataframe = tokenize_tweets_df(
+            dataframe=dataframe
+        )
+    dataframe['tokens_str'] = dataframe['tokens_filtered'].apply(
+        lambda x: ' '.join(x)
+    )
+    # iterate through set of cluster labels to create word clouds for each cluster
+    dataframe[cluster_labels_column] = dataframe[cluster_labels_column].astype('category')
+    unique_labels = set(dataframe[cluster_labels_column].cat.categories)
+    for index, cluster_label in enumerate(sorted(unique_labels, key=lambda x: int(x))):
+        ax = plt.subplot(int(len(unique_labels)/2) + 1, 2, index + 1)
+        cluster_subset = dataframe[dataframe[cluster_labels_column] == cluster_label]
+        text = ' '.join(cluster_subset['tokens_str'].tolist())
+        wordcloud = WordCloud(
+            font_path=os.environ.get('JAPANESE_FONT_PATH'),
+            background_color="white",
+            max_font_size=200,
+            # width=800,
+            # height=400
+        ).generate(text)
+        ax.imshow(wordcloud, interpolation="bilinear")
+        ax.axis("off")
+        ax.title.set_text(f'Cluster n° {cluster_label}')
+    plt.show()
 
 
 def plot_tweet_count_per_month_histogram(
@@ -345,21 +372,25 @@ if __name__ == "__main__":
 
     load_dotenv(find_dotenv())
 
+    num_clusters = 8
+
     df = read_json_dataframe(
         file_path=os.environ.get('LATEST_DATASET_PATH'),
         remove_duplicates=True
     )
-    df = tokenize_tweets_df(
-        dataframe=df
+    df, _ = kmeans_clustering(
+        dataframe=df,
+        embeddings_column='mistral-embed_embeddings',
+        n_clusters=num_clusters
     )
-    df.to_json(
-        os.path.join(
-            os.environ.get('DATASETS_DIR_PATH'),
-            'tweets_2017_2019_tokens.json'
-        ),
-        orient='table'
+    plot_word_clouds_clusters(
+        df,
+        cluster_labels_column=f'clustering_kmeans_{num_clusters}',
+        output_path=os.path.join(
+            os.getenv('PLOT_DIR_PATH'),
+            'wordcloud_total.png'
+        )
     )
-    plot_word_cloud(df, '/home/juliette/data/meToo_data/plots/wordcloud_total.png')
     # mistral_model = 'mistral-embed'
     # openai_model = 'text-embedding-3-large'
     # model = mistral_model

@@ -1,15 +1,21 @@
 import json
+import os
 import re
+from collections import Counter
+from math import log
 
 import pandas as pd
 import spacy
 
-from typing import Callable, List, Tuple
+from typing import Callable, List, Tuple, Optional, Dict
+
+from dotenv import load_dotenv, find_dotenv
 from spacy.matcher import Matcher
 from tqdm import tqdm
 
+from research.clustering import kmeans_clustering
 from research.stopwords import japanese_stopwords
-from utils.file_utils import read_corpus_generator
+from utils.file_utils import read_corpus_generator, read_json_dataframe
 
 
 def analyze_tweet_generator(input_data_path, model):
@@ -35,6 +41,7 @@ def tokenize_tweet(
         if token.text not in japanese_stopwords
            and (token.pos_ not in forbidden_pos or token.text in words_to_keep)
     ]
+    print(row.name)
     return tokens, filtered_tokens
 
 
@@ -45,8 +52,8 @@ def tokenize_tweets_df(
     nlp = spacy.load('ja_core_news_trf')
     dataframe[[tokens_column, f'{tokens_column}_filtered']] = dataframe.apply(
         lambda row: tokenize_tweet(row, nlp, text_column),
-        index=0
-    )
+        axis=1
+    ).apply(pd.Series)
     return dataframe
 
 
@@ -127,8 +134,62 @@ def get_end_offset(start_position, end_position, doc):
     return doc[start_position].idx + len(doc[start_position:end_position].text)
 
 
+def tf_idf(
+        documents: Dict[str, List[str]],
+        max_terms: Optional[int] = 10):
+    n_documents = len(documents)
+    for cluster_name, document in documents.items():
+        terms = document.split(' ')
+        max_term_freq = sorted(
+            [(key, value) for key, value in Counter(terms).items()],
+            key=lambda x: x[1],
+            reverse=True
+        )[0][1]
+        terms_matrix = dict()
+        for term in tqdm(set(terms)):
+            term_frequency = terms.count(term)
+            if term_frequency > 5:
+                num_documents_with_term = len([doc for doc in documents.values() if term in doc])
+                inverse_doc_frequency = log(n_documents / num_documents_with_term)
+                terms_matrix[term] = {
+                    'tf': term_frequency,
+                    'adjusted-tf': (adjusted_tf := term_frequency / max_term_freq),
+                    'idf': inverse_doc_frequency,
+                    'tf-idf': adjusted_tf * inverse_doc_frequency
+                }
+        top_terms = sorted(
+            [(key, value.get('tf-idf')) for key, value in terms_matrix.items()],
+            reverse=True,
+            key=lambda x: x[1]
+        )[:max_terms+1]
+        print(f'Cluster {cluster_name} : {top_terms}')
+
+
 if __name__ == "__main__":
-    tags = list_words_per_morpho_tag('', "text", hard_limit=200)
-    for tag, words in tags.items():
-        print(tag)
-        print(set(words))
+
+    load_dotenv(find_dotenv())
+
+    n_clusters = 20
+
+    df = read_json_dataframe(
+        file_path=os.environ.get('LATEST_DATASET_PATH'),
+        remove_duplicates=True
+    )
+    df, _ = kmeans_clustering(
+        dataframe=df,
+        embeddings_column='mistral-embed_embeddings',
+        n_clusters=n_clusters
+    )
+    df['tokens_str'] = df['tokens'].apply(
+        lambda x: ' '.join(x)
+    )
+    texts = []
+    cluster_labels_column = f'clustering_kmeans_{n_clusters}'
+    df[cluster_labels_column] = df[cluster_labels_column].astype('category')
+    unique_labels = set(df[cluster_labels_column].cat.categories)
+    clusters = dict()
+    for label in unique_labels:
+        cluster_subset = df[df[cluster_labels_column] == label]
+        text = ' '.join(cluster_subset['tokens_str'].tolist())
+        clusters[label] = text
+    tf_idf_matrix = tf_idf(clusters)
