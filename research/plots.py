@@ -338,7 +338,7 @@ def plot_average_metric_per_tweet_per_user(
     export_plotly_image(fig, output_path)
 
 
-def plot_tsne_scatter(
+def plot_2d_scatter(
         dataframe: pd.DataFrame,
         embedding_column: str,
         color_column: Optional[str] = None,
